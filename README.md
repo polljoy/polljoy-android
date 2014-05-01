@@ -24,7 +24,7 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
 
 # Setup your Android Project
 
-1.	Copy Polljoy SDK Archived File to your project workspace folder and unzip, you will see two projects there: PolljoySDK and PolljoyTestApp
+1.	Copy Polljoy SDK Archived File to your project workspace folder and unzip, you will see two projects there: PolljoySDK and PolljoyTestApp.
 2.	In eclipse, import PolljoySDK project into your workspace.
 3.	Add PolljoySDK project as a required project on the build path for your own project.
 
@@ -103,13 +103,13 @@ In your program logic, import `com.polljoy.Polljoy; ` at the program you want to
    		   sessionCount, 
    		   timeSinceInstall,
    		   userType,
-   		   this);
+   		   delegate);
  // ...
  ```
   
 In summary:
 
-`delegate`: the instance to handle all callbacks from polljoy SDK. The delegate should conform to `PolljoyDelegate` as defined in `Polljoy.java`
+`delegate`: the instance to handle all callbacks from polljoy SDK. The delegate should implement `PolljoyDelegate` as defined in `Polljoy.java`
 
 `appVersion`: your app's version to be used as a poll selection criteria. This should match with your poll setting. Or set it as nil if you are not using.
 
