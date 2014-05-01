@@ -68,8 +68,8 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
  ``` java
  // ...
 	protected void onCreate(Bundle savedInstanceState) {
-     super.onCreate(savedInstanceState);
-			  Polljoy.startSession(this.getApplicationContext(), " YOUR_APP_ID");
+		super.onCreate(savedInstanceState);
+		Polljoy.startSession(this.getApplicationContext(), " YOUR_APP_ID");
  // ...
  ```
 
@@ -77,13 +77,13 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
  
  ``` java
  // ...
-		public void onCreate() {
-			  super.onCreate();
-     Polljoy.startSession(this, "YOUR_APP_ID");
+	public void onCreate() {
+		super.onCreate();
+		Polljoy.startSession(this, "YOUR_APP_ID");
  // ...
  ```
  
- PollJoy SDK will automatically handle all session control and all required information to get the correct poll based on your poll setup in admin panel and save your poll result for analysis. These includes the session ID, session count, time (days) since first call PollJoy SDK, device ID, platform, OS version … etc. 
+ PollJoy SDK will automatically handle all session control and all required information to get the correct poll based on your poll setup in admin panel and save your poll result for analysis. These includes the session ID, session count, time (days) since first call PollJoy SDK, device ID, platform, OS version ... etc. 
 
  Each time you call `startSession`, SDK will increase the session count by 1. So, you should only call it once for each app launch to get the session count correct.
  
@@ -98,7 +98,12 @@ In your program logic, import `com.polljoy.Polljoy; ` at the program you want to
 
  ``` java
  // ...
-   Polljoy.getPoll();
+   Polljoy.getPoll(appVersion, 
+   		   level, 
+   		   sessionCount, 
+   		   timeSinceInstall,
+   		   userType,
+   		   this);
  // ...
  ```
   
@@ -110,7 +115,7 @@ In summary:
 
 `level`: if your app is a game app, this is your game level. This should match with your poll setting. Or set it as 0 if you are not using.
 
-`userType`: your app user type either **Pay** or **Non-Pay**. This is the `ENUM PJUserType` as defined in `Polljoy.h`
+`userType`: your app user type either **Pay** or **Non-Pay**. This is the `ENUM PJUserType` as defined in `Polljoy.java`
 
 Please check `Polljoy.java` for the type of the parameters. polljoy's API is open. All data returned is passed back to the delegate. Delegate can use the returned poll data for their own control if needed.
 
