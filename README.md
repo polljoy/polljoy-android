@@ -33,21 +33,17 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
 4. Add INTERNET permission to your project’s AndroidManifest.xml:
 
  ``` java
- 
  <uses-permission android:name="android.permission.INTERNET" />
- 
  ```
  
 5.	Again in `AndroidManifest.xml`, declare `PJPollViewActivity` by adding the following lines between `<application>` and `</application>`:
 
  ``` java
-
  <activity
  android:name="com.polljoy.PJPollViewActivity"
  android:launchMode="singleInstance"
  android:theme="@android:style/Theme.Translucent" >
  </activity>
-
  ```
 
 
@@ -56,9 +52,7 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
  Import Polljoy package by adding the following code when you call methods within PolljoySDK:
  
  ``` java
- 
  import com.polljoy.Polljoy;
- 
  ``` 
 
  polljoy works in the background to avoid interruption to your app's main thread.
