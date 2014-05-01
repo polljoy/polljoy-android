@@ -100,8 +100,6 @@ In your program logic, import `com.polljoy.Polljoy; ` at the program you want to
  // ...
    Polljoy.getPoll(appVersion, 
    		   level, 
-   		   sessionCount, 
-   		   timeSinceInstall,
    		   userType,
    		   delegate);
  // ...
@@ -109,13 +107,13 @@ In your program logic, import `com.polljoy.Polljoy; ` at the program you want to
   
 In summary:
 
-`delegate`: the instance to handle all callbacks from polljoy SDK. The delegate should implement `PolljoyDelegate` as defined in `Polljoy.java`
-
 `appVersion`: your app's version to be used as a poll selection criteria. This should match with your poll setting. Or set it as nil if you are not using.
 
 `level`: if your app is a game app, this is your game level. This should match with your poll setting. Or set it as 0 if you are not using.
 
 `userType`: your app user type either **Pay** or **Non-Pay**. This is the `ENUM PJUserType` as defined in `Polljoy.java`
+
+`delegate`: the instance to handle all callbacks from polljoy SDK. The delegate should implement `PolljoyDelegate` as defined in `Polljoy.java`
 
 Please check `Polljoy.java` for the type of the parameters. polljoy's API is open. All data returned is passed back to the delegate. Delegate can use the returned poll data for their own control if needed.
 
