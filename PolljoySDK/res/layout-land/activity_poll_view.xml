@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:autofit="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/pollViewLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/transparent" >
+
+    <RelativeLayout
+        android:id="@+id/pollView"
+        android:layout_width="@dimen/poll_view_width"
+        android:layout_height="@dimen/poll_view_height"
+        android:layout_gravity="center"
+        android:background="@drawable/poll_view_border" >
+
+        <ImageView
+            android:id="@+id/pollImageView"
+            android:layout_width="@dimen/poll_image_width"
+            android:layout_height="@dimen/poll_image_height"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/poll_image_margin_left"
+            android:layout_marginTop="@dimen/poll_image_margin_top"
+            android:scaleType="fitCenter"
+            android:src="@drawable/polljoy" />
+
+        <ImageButton
+            android:id="@+id/closeButton"
+            style="@style/transparent_background_image_button"
+            android:layout_width="@dimen/close_button_width"
+            android:layout_height="@dimen/close_button_height"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginRight="@dimen/close_button_margin_right"
+            android:layout_marginTop="@dimen/close_button_margin_top"
+            android:scaleType="center"
+            android:src="@drawable/btn_cancel" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:gravity="center"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/virtualAmountRewardTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/reward_text_view_height"
+                android:layout_gravity="center|right"
+                android:layout_marginLeft="@dimen/reward_text_view_margin_left"
+                android:layout_marginRight="@dimen/reward_text_view_margin_right"
+                android:text="Reward:"
+                android:textAlignment="center"
+                android:textSize="@dimen/reward_text_view_text_size"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/virtualAmountTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/virtual_amount_text_view_height"
+                android:layout_marginBottom="@dimen/virtual_amount_text_view_margin_bottom"
+                android:layout_marginTop="@dimen/virtual_amount_text_view_margin_top"
+                android:gravity="center_horizontal"
+                android:text="30"
+                android:textSize="@dimen/virtual_amount_text_view_text_size"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_below="@id/closeButton"
+            android:layout_centerHorizontal="true"
+            android:layout_toRightOf="@id/pollImageView"
+            android:gravity="bottom"
+            android:orientation="vertical" >
+
+            <com.polljoy.internal.AutofitTextView
+                android:id="@+id/questionTextView"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/question_text_view_height"
+                android:layout_marginBottom="@dimen/question_text_view_margin_bottom"
+                android:layout_marginLeft="@dimen/question_text_view_margin_left"
+                android:layout_marginRight="@dimen/question_text_view_margin_right"
+                android:layout_marginTop="@dimen/question_text_view_margin_top"
+                android:ellipsize="end"
+                android:maxLines="6"
+                android:singleLine="false"
+                android:text="What would like to ask?"
+                android:textStyle="bold"
+                autofit:minTextSize="8sp"
+                autofit:sizeToFit="true" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+
+                <LinearLayout
+                    android:id="@+id/mcButtonsLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="0dp"
+                    android:gravity="bottom"
+                    android:orientation="vertical"
+                    android:visibility="visible" >
+
+                    <com.polljoy.internal.SingleLineButton
+                        android:id="@+id/mcButton1"
+                        style="@style/poll_dialog_option_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/multi_choice_button_height"
+                        android:layout_marginBottom="@dimen/multi_choice_button_margin_bottom"
+                        android:layout_marginLeft="@dimen/multi_choice_button_margin_left"
+                        android:layout_marginRight="@dimen/multi_choice_button_margin_right"
+                        android:text="Button For Test" />
+
+                    <com.polljoy.internal.SingleLineButton
+                        android:id="@+id/mcButton2"
+                        style="@style/poll_dialog_option_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/multi_choice_button_height"
+                        android:layout_marginBottom="@dimen/multi_choice_button_margin_bottom"
+                        android:layout_marginLeft="@dimen/multi_choice_button_margin_left"
+                        android:layout_marginRight="@dimen/multi_choice_button_margin_right"
+                        android:text="Button" />
+
+                    <com.polljoy.internal.SingleLineButton
+                        android:id="@+id/mcButton3"
+                        style="@style/poll_dialog_option_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/multi_choice_button_height"
+                        android:layout_marginBottom="@dimen/multi_choice_button_margin_bottom"
+                        android:layout_marginLeft="@dimen/multi_choice_button_margin_left"
+                        android:layout_marginRight="@dimen/multi_choice_button_margin_right"
+                        android:text="Button" />
+
+                    <com.polljoy.internal.SingleLineButton
+                        android:id="@+id/mcButton4"
+                        style="@style/poll_dialog_option_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/multi_choice_button_height"
+                        android:layout_marginBottom="@dimen/multi_choice_button_margin_bottom"
+                        android:layout_marginLeft="@dimen/multi_choice_button_margin_left"
+                        android:layout_marginRight="@dimen/multi_choice_button_margin_right"
+                        android:text="Button" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/textResponseLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_gravity="bottom"
+                    android:layout_marginBottom="0dp"
+                    android:gravity="bottom"
+                    android:orientation="vertical" >
+
+                    <EditText
+                        android:id="@+id/responseEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginBottom="@dimen/response_edit_text_margin_bottom"
+                        android:layout_marginLeft="@dimen/response_edit_text_margin_left"
+                        android:layout_marginRight="@dimen/response_edit_text_margin_right"
+                        android:layout_marginTop="@dimen/response_edit_text_margin_top"
+                        android:layout_weight="1"
+                        android:background="@drawable/response_edit_text_background"
+                        android:ems="10"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:gravity="top"
+                        android:inputType="text|textMultiLine"
+                        android:padding="4dp"
+                        android:text="" />
+
+                    <Button
+                        android:id="@+id/submitButton"
+                        style="@style/poll_dialog_option_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/multi_choice_button_height"
+                        android:layout_marginBottom="@dimen/multi_choice_button_margin_bottom"
+                        android:layout_marginLeft="@dimen/multi_choice_button_margin_left"
+                        android:layout_marginRight="@dimen/multi_choice_button_margin_right"
+                        android:text="Submit" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/collectButton"
+                    style="@style/poll_dialog_option_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/multi_choice_button_height"
+                    android:layout_gravity="bottom"
+                    android:layout_marginBottom="@dimen/collect_button_margin_bottom"
+                    android:layout_marginLeft="@dimen/collect_button_margin_left"
+                    android:layout_marginRight="@dimen/collect_button_margin_right"
+                    android:text="Collect"
+                    android:visibility="invisible" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/virtualAmountImageView"
+            android:layout_width="@dimen/money_bag_width"
+            android:layout_height="@dimen/money_bag_height"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_marginBottom="@dimen/money_bag_margin_bottom"
+            android:layout_marginLeft="@dimen/money_bag_margin_left"
+            android:src="@drawable/money_bag"
+            android:visibility="invisible" />
+    </RelativeLayout>
+
+</FrameLayout>
