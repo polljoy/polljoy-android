@@ -112,7 +112,7 @@ In summary:
 
 `userType`: your app user type either **Pay** or **Non-Pay**. This is the `ENUM PJUserType` as defined in `Polljoy.h`
 
-Please check `Polljoy.java` for the type of the parameters. polljoy?�s API is open. All data returned is passed back to the delegate. Delegate can use the returned poll data for their own control if needed.
+Please check `Polljoy.java` for the type of the parameters. polljoy's API is open. All data returned is passed back to the delegate. Delegate can use the returned poll data for their own control if needed.
 
 `NOTE: if you don't use any poll selection criteria, you can simply call the following method and let the SDK handle everything.
 
