@@ -174,7 +174,7 @@ public class PJPollViewActivity extends Activity {
 		this.virtualAmountImageView.setColorFilter(colorFilter);
 		try {
 			if (myPoll.type.equals("M")) {
-				String[] choices = myPoll.choice.split(",");
+				String[] choices = myPoll.choices;
 				int offset = mcButtons.length - choices.length;
 
 				for (int i = 0; i < choices.length; i++) {

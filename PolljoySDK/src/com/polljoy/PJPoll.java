@@ -2,6 +2,7 @@ package com.polljoy;
 
 import java.io.Serializable;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.polljoy.util.PJColorHelper;
@@ -19,7 +20,9 @@ public class PJPoll implements Serializable {
 	String pollText;
 	String type;
 	String priority;
+	@Deprecated
 	String choice;
+	String[] choices;
 	boolean randomOrder;
 	boolean mandatory;
 	int virtualAmount;
@@ -52,6 +55,7 @@ public class PJPoll implements Serializable {
 	String response;
 	boolean isReadyToShow;
 	String imageUrlToDisplay;
+	String[] tags;
 
 	PJPoll(JSONObject jsonObject) {
 		this.appId = jsonObject.optString("appId");
@@ -102,7 +106,28 @@ public class PJPoll implements Serializable {
 		this.pollToken = jsonObject.optInt("pollToken");
 		this.response = jsonObject.optString("response");
 		this.isReadyToShow = false;
+		JSONArray choicesJsonArray = jsonObject.optJSONArray("choices");
+		this.choices = convertJSONArrayToStringArray(choicesJsonArray);
+		JSONArray tagsJsonArray = jsonObject.optJSONArray("tags");
+		this.tags = convertJSONArrayToStringArray(tagsJsonArray);
 		this.imageUrlToDisplay = null;
+	}
+
+	String[] convertJSONArrayToStringArray(JSONArray jsonArray) {
+		String[] result = null;
+		try {
+			if (jsonArray != null && jsonArray.length() > 0) {
+				result = new String[jsonArray.length()];
+				for (int i = 0; i < jsonArray.length(); i++) {
+					String aChoice = jsonArray.optString(i);
+					result[i] = aChoice;
+				}
+			} else {
+			}
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+		}
+		return result;
 	}
 
 	public String getAppId() {
@@ -169,12 +194,22 @@ public class PJPoll implements Serializable {
 		this.priority = priority;
 	}
 
+	@Deprecated
 	public String getChoice() {
 		return choice;
 	}
 
+	@Deprecated
 	public void setChoice(String choice) {
 		this.choice = choice;
+	}
+
+	public String[] getChoices() {
+		return choices;
+	}
+
+	public void setChoices(String[] choices) {
+		this.choices = choices;
 	}
 
 	public boolean isRandomOrder() {
@@ -423,5 +458,13 @@ public class PJPoll implements Serializable {
 
 	public void setReadyToShow(boolean isReadyToShow) {
 		this.isReadyToShow = isReadyToShow;
+	}
+
+	public String[] getTags() {
+		return tags;
+	}
+
+	public void setTags(String[] tags) {
+		this.tags = tags;
 	}
 }

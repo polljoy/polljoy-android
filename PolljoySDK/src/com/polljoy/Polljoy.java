@@ -62,6 +62,7 @@ public class Polljoy {
 	static int _session;
 	static int _timeSinceInstall;
 	static PJUserType _userType;
+	static String _tags;
 	static ArrayList<PJPoll> _polls = new ArrayList<PJPoll>();
 
 	static boolean _autoShow;
@@ -249,16 +250,23 @@ public class Polljoy {
 		getPoll(appVersion, level, 0, 0, userType, delegate);
 	}
 
+	public static void getPoll(String appVersion, int level, int session,
+			int timeSinceInstall, PJUserType userType, PolljoyDelegate delegate) {
+		getPoll(appVersion, level, session, timeSinceInstall, userType, null,
+				delegate);
+	}
+
 	static Handler schedulePollRequestHandler = null;
 
 	static void schedulePollRequest() {
 		Log.i(TAG, "schedulePollRequest");
 		getPoll(_appVersion, _level, _session, _timeSinceInstall, _userType,
-				_delegate);
+				_tags, _delegate);
 	}
 
 	public static void getPoll(String appVersion, int level, int session,
-			int timeSinceInstall, PJUserType userType, PolljoyDelegate delegate) {
+			int timeSinceInstall, PJUserType userType, String tags,
+			PolljoyDelegate delegate) {
 		level = Math.max(level, 0);
 		session = Math.max(session, 0);
 		timeSinceInstall = Math.max(timeSinceInstall, 0);
@@ -270,6 +278,7 @@ public class Polljoy {
 			_timeSinceInstall = timeSinceInstall;
 			_userType = userType;
 			_delegate = delegate;
+			_tags = tags;
 			// check if _isRegitseringSession. if yes, delay the request by 1
 			// sec
 			if (_startSessionTask != null) {
@@ -323,7 +332,7 @@ public class Polljoy {
 		}
 		_getPollTask = new PJGetPollAsyncTask(_sessionId, _deviceId,
 				_deviceModel, _devicePlatform, _deviceOS, appVersion, level,
-				session, timeSinceInstall, userType);
+				session, timeSinceInstall, userType, tags);
 		_getPollTask.taskListener = new PJAsyncTaskListener() {
 
 			@Override
@@ -455,7 +464,7 @@ public class Polljoy {
 	}
 
 	static void downloadAppImage(String imageUrl) {
-		if (imageUrl != null) {
+		if (imageUrl != null && !imageUrl.equals("null")) {
 			_imageDownloader.download(imageUrl, null,
 					new ImageDownloader.CompletionHandler() {
 
@@ -498,6 +507,9 @@ public class Polljoy {
 								checkPollStatus();
 							}
 						});
+			} else {
+				poll.isReadyToShow = true;
+				checkPollStatus();
 			}
 		} catch (NullPointerException e) {
 			e.printStackTrace();
@@ -679,6 +691,14 @@ public class Polljoy {
 
 	public static void setUserType(PJUserType userType) {
 		_userType = userType;
+	}
+
+	public static String getTags() {
+		return _tags;
+	}
+
+	public static void setTags(String tags) {
+		_tags = tags;
 	}
 
 	public static ArrayList<PJPoll> getPolls() {

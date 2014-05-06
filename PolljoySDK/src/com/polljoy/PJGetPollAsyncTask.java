@@ -14,11 +14,12 @@ public class PJGetPollAsyncTask extends PJAsyncTask {
 	int sessionCount = 0;
 	int timeSinceInstall = 0;
 	PJUserType userType = PJUserType.PJNonPayUser;
+	String tags = null;
 
 	PJGetPollAsyncTask(String sessionId, String deviceId, String deviceModel,
 			String devicePlatform, String deviceOS, String appVersion,
 			int level, int sessionCount, int timeSinceInstall,
-			PJUserType userType) {
+			PJUserType userType, String tags) {
 		this.methodName = "smartget.json";
 		this.TAG = "PJGetPollAsyncTask";
 
@@ -32,6 +33,7 @@ public class PJGetPollAsyncTask extends PJAsyncTask {
 		this.sessionCount = sessionCount;
 		this.timeSinceInstall = timeSinceInstall;
 		this.userType = userType;
+		this.tags = tags;
 	}
 
 	@Override
@@ -56,6 +58,7 @@ public class PJGetPollAsyncTask extends PJAsyncTask {
 			}
 			jsonObject.putOpt("timeSinceInstall", this.timeSinceInstall);
 			jsonObject.putOpt("userType", this.userType.userTypeString());
+			jsonObject.putOpt("tags", this.tags);
 			return jsonObject;
 		} catch (JSONException e) {
 			e.printStackTrace();
