@@ -7,7 +7,7 @@
         android:right="4dp"
         android:top="4dp" />
 
-    <solid android:color="@color/gray" />
+    <solid android:color="@color/pj_gray" />
 
     <stroke
         android:width="4dp"
