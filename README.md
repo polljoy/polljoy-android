@@ -26,7 +26,7 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
 
 1.	Copy Polljoy SDK Archived File to your project workspace folder and unzip, you will see two projects there: PolljoySDK and PolljoyTestApp.
 2.	In eclipse, import PolljoySDK project into your workspace.
-3.	Add PolljoySDK project as a required project on the build path for your own project.
+3.	Add PolljoySDK project as a reference project in your project settings.
 
   ![Picture](Doc/setup.png)
 
@@ -194,6 +194,12 @@ If you issue a virtual currency amount to user, you MUST implement this method t
 #### Got questions? Email us at help@polljoy.com
 
 ## Version History
+
+### Version 0.3
+
+ - fix a bug that is caused when the colorString is "000"
+ - remove unused values and images.
+ - rename colornames to prevent conflicts
 
 ### Version 0.2
  - fix a bug that the poll doesn't show when both its app image and poll image are not set
