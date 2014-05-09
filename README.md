@@ -195,6 +195,9 @@ If you issue a virtual currency amount to user, you MUST implement this method t
 
 ## Version History
 
+### Version 1.0
+ - Stable public release
+
 ### Version 0.3
 
  - fix a bug that is caused when the colorString is "000"
