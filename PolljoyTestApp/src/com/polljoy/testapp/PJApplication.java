@@ -10,7 +10,7 @@ public class PJApplication extends Application {
 	public void onCreate() {
 		super.onCreate();
 
-		Polljoy.setSandboxMode(true);
+		// Polljoy.setSandboxMode(true);
 
 		// register your Polljoy session here.
 		// check YOUR_APP_ID in Polljoy admin panel
