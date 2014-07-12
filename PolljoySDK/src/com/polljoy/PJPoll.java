@@ -1,11 +1,16 @@
 package com.polljoy;
 
 import java.io.Serializable;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.polljoy.internal.PolljoyCore;
 import com.polljoy.util.PJColorHelper;
+import com.polljoy.util.PJDateHelper;
 
 public class PJPoll implements Serializable {
 	/**
@@ -40,7 +45,9 @@ public class PJPoll implements Serializable {
 	String pollImageUrl;
 	int userId;
 	String appImageUrl;
+	@Deprecated
 	int backgroundColor;
+	@Deprecated
 	int borderColor;
 	int buttonColor;
 	int fontColor;
@@ -54,10 +61,29 @@ public class PJPoll implements Serializable {
 	int pollToken;
 	String response;
 	boolean isReadyToShow;
+	@Deprecated
 	String imageUrlToDisplay;
 	String[] tags;
 
-	PJPoll(JSONObject jsonObject) {
+	int appUsageTime = 0;
+	Hashtable<String, String> choiceUrl = null;
+	String collectButtonText = null;
+	int imageCornerRadius = 0;
+	int level = 0;
+	String pollRewardImageUrl = null;
+	String prerequisiteType = null;
+	String prerequisiteAnswer = null;
+	String prerequisitePoll = null;
+	Date sendDate = null;
+	int session = 0;
+	String submitButtonText = null;
+	String thankyouButtonText = null;
+	String virtualCurrency = null;
+	PJApp app = null;
+	int imageStatus;
+	PJPollImageUrlSet imageUrlSetForDisplay = new PJPollImageUrlSet();
+
+	public PJPoll(JSONObject jsonObject) {
 		this.appId = jsonObject.optString("appId");
 		this.pollId = jsonObject.optInt("pollId");
 		this.desiredResponses = jsonObject.optInt("desiredResponses");
@@ -111,6 +137,32 @@ public class PJPoll implements Serializable {
 		JSONArray tagsJsonArray = jsonObject.optJSONArray("tags");
 		this.tags = convertJSONArrayToStringArray(tagsJsonArray);
 		this.imageUrlToDisplay = null;
+
+		JSONObject choiceUrlJsonObject = jsonObject.optJSONObject("choiceUrl");
+		this.choiceUrl = this
+				.getChoiceUrlMapFromJSONObject(choiceUrlJsonObject);
+
+		this.collectButtonText = jsonObject.optString("collectButtonText");
+		this.pollRewardImageUrl = jsonObject.optString("pollRewardImageUrl");
+		this.prerequisiteAnswer = jsonObject.optString("prerequisiteAnswer");
+		this.prerequisitePoll = jsonObject.optString("prerequisitePoll");
+		this.prerequisiteType = jsonObject.optString("prerequisiteType");
+		this.virtualCurrency = jsonObject.optString("virtualCurrency");
+		this.submitButtonText = jsonObject.optString("submitButtonText");
+		this.thankyouButtonText = jsonObject.optString("thankyouButtonText");
+
+		String dateString = jsonObject.optString("sendDate");
+		this.sendDate = PJDateHelper.parseDateString(dateString);
+		this.appUsageTime = jsonObject.optInt("appUsageTime");
+		this.level = jsonObject.optInt("level");
+		this.session = jsonObject.optInt("session");
+		this.imageCornerRadius = jsonObject.optInt("imageCornerRadius");
+
+		JSONObject appJsonObject = jsonObject.optJSONObject("app");
+		PJApp parsedApp = new PJApp(appJsonObject);
+		if (parsedApp.appId != null) {
+			this.app = parsedApp;
+		}
 	}
 
 	String[] convertJSONArrayToStringArray(JSONArray jsonArray) {
@@ -121,6 +173,30 @@ public class PJPoll implements Serializable {
 				for (int i = 0; i < jsonArray.length(); i++) {
 					String aChoice = jsonArray.optString(i);
 					result[i] = aChoice;
+				}
+			} else {
+			}
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	Hashtable<String, String> getChoiceUrlMapFromJSONObject(
+			JSONObject sourceJsonObject) {
+		Hashtable<String, String> result = null;
+		try {
+			if (sourceJsonObject != null) {
+				result = new Hashtable<String, String>();
+				@SuppressWarnings("unchecked")
+				Iterator<String> names = sourceJsonObject.keys();
+				String device = PolljoyCore.isAmazonKindle()?"amazon":"android";
+				while (names.hasNext()) {
+					String name = names.next();
+					JSONObject urlsJSONObject = sourceJsonObject
+							.optJSONObject(name);
+					String url = urlsJSONObject.optString(device);
+					result.put(name, url);
 				}
 			} else {
 			}
@@ -348,10 +424,12 @@ public class PJPoll implements Serializable {
 		this.appImageUrl = appImageUrl;
 	}
 
+	@Deprecated
 	public int getBackgroundColor() {
 		return backgroundColor;
 	}
 
+	@Deprecated
 	public void setBackgroundColor(int backgroundColor) {
 		this.backgroundColor = backgroundColor;
 	}
@@ -467,4 +545,153 @@ public class PJPoll implements Serializable {
 	public void setTags(String[] tags) {
 		this.tags = tags;
 	}
+
+	public String getImageUrlToDisplay() {
+		return imageUrlToDisplay;
+	}
+
+	public void setImageUrlToDisplay(String imageUrlToDisplay) {
+		this.imageUrlToDisplay = imageUrlToDisplay;
+	}
+
+	public Hashtable<String, String> getChoiceUrl() {
+		return choiceUrl;
+	}
+
+	public void setChoiceUrl(Hashtable<String, String> choiceUrl) {
+		this.choiceUrl = choiceUrl;
+	}
+
+	public String getCollectButtonText() {
+		return collectButtonText;
+	}
+
+	public void setCollectButtonText(String collectButtonText) {
+		this.collectButtonText = collectButtonText;
+	}
+
+	public String getPollRewardImageUrl() {
+		return pollRewardImageUrl;
+	}
+
+	public void setPollRewardImageUrl(String pollRewardImageUrl) {
+		this.pollRewardImageUrl = pollRewardImageUrl;
+	}
+
+	public String getPrerequisiteAnswer() {
+		return prerequisiteAnswer;
+	}
+
+	public void setPrerequisiteAnswer(String prerequisiteAnswer) {
+		this.prerequisiteAnswer = prerequisiteAnswer;
+	}
+
+	public String getPrerequisitePoll() {
+		return prerequisitePoll;
+	}
+
+	public void setPrerequisitePoll(String prerequisitePoll) {
+		this.prerequisitePoll = prerequisitePoll;
+	}
+
+	public String getPrerequisiteType() {
+		return prerequisiteType;
+	}
+
+	public void setPrerequisiteType(String prerequisiteType) {
+		this.prerequisiteType = prerequisiteType;
+	}
+
+	public String getVirtualCurrency() {
+		return virtualCurrency;
+	}
+
+	public void setVirtualCurrency(String virtualCurrency) {
+		this.virtualCurrency = virtualCurrency;
+	}
+
+	public String getSubmitButtonText() {
+		return submitButtonText;
+	}
+
+	public void setSubmitButtonText(String submitButtonText) {
+		this.submitButtonText = submitButtonText;
+	}
+
+	public String getThankyouButtonText() {
+		return thankyouButtonText;
+	}
+
+	public void setThankyouButtonText(String thankyouButtonText) {
+		this.thankyouButtonText = thankyouButtonText;
+	}
+
+	public Date getSendDate() {
+		return sendDate;
+	}
+
+	public void setSendDate(Date sendDate) {
+		this.sendDate = sendDate;
+	}
+
+	public PJApp getApp() {
+		return app;
+	}
+
+	public void setApp(PJApp app) {
+		this.app = app;
+	}
+
+	public int getAppUsageTime() {
+		return appUsageTime;
+	}
+
+	public void setAppUsageTime(int appUsageTime) {
+		this.appUsageTime = appUsageTime;
+	}
+
+	public int getImageCornerRadius() {
+		return imageCornerRadius;
+	}
+
+	public void setImageCornerRadius(int imageCornerRadius) {
+		this.imageCornerRadius = imageCornerRadius;
+	}
+
+	public int getLevel() {
+		return level;
+	}
+
+	public void setLevel(int level) {
+		this.level = level;
+	}
+
+	public int getSession() {
+		return session;
+	}
+
+	public void setSession(int session) {
+		this.session = session;
+	}
+
+	public int getImageStatus() {
+		return imageStatus;
+	}
+
+	public void setImageStatus(PJPollImageStatus imageStatus) {
+		this.imageStatus = imageStatus.getStatusCode();
+	}
+
+	public PJPollImageUrlSet getImageUrlSetForDisplay() {
+		return imageUrlSetForDisplay;
+	}
+
+	public void setImageUrlSetForDisplay(PJPollImageUrlSet imageUrlSetForDisplay) {
+		this.imageUrlSetForDisplay = imageUrlSetForDisplay;
+	}
+
+	public void setImageStatus(int imageStatus) {
+		this.imageStatus = imageStatus;
+	}
+
 }

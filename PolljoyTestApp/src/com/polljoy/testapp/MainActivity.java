@@ -50,6 +50,7 @@ public class MainActivity extends Activity implements PolljoyDelegate {
 		requestPoll(null);
 	}
 
+
 	private void intializeUIControls() {
 		setContentView(R.layout.activity_main);
 		appIdEditText = (EditText) this.findViewById(R.id.appIdEditText);
@@ -102,6 +103,8 @@ public class MainActivity extends Activity implements PolljoyDelegate {
 		return true;
 	}
 
+	static boolean hasShownAppInfo = false;
+
 	public void updateSessionLog() {
 		try {
 			sessionIdTextView.setText(Polljoy.getSessionId());
@@ -110,27 +113,33 @@ public class MainActivity extends Activity implements PolljoyDelegate {
 			sessionCountEditText.setText(String.valueOf(Polljoy.getSession()));
 			timeSinceInstallEditText.setText(String.valueOf(Polljoy
 					.getTimeSinceInstall()));
-			// request for poll as you want
-			// this sample already request poll in onCreate.
-			// this.requestPoll(null);
-			logTrace("Device Id: " + Polljoy.getDeviceId());
-			logTrace("App Name: " + Polljoy.getApp().getAppName());
-			logTrace("defaultImageUrl: " + Polljoy.getApp().getAppName());
-			logTrace("maximumPollPerSession: "
-					+ Polljoy.getApp().getMaximumPollPerSession());
-			logTrace("maximumPollPerDay: "
-					+ Polljoy.getApp().getMaximumPollPerDay());
-			logTrace("maximumPollInARow: "
-					+ Polljoy.getApp().getMaximumPollInARow());
-			logTrace("backgroundColor: "
-					+ Integer.toHexString(Polljoy.getApp().getBackgroundColor()));
-			logTrace("borderColor: "
-					+ Integer.toHexString(Polljoy.getApp().getBorderColor()));
-			logTrace("buttonColor: "
-					+ Integer.toHexString(Polljoy.getApp().getButtonColor()));
-			logTrace("fontColor: "
-					+ Integer.toHexString(Polljoy.getApp().getFontColor()));
-
+			if (Polljoy.getSessionId() != null) {
+				if (!hasShownAppInfo) {
+					logTrace("Device Id: " + Polljoy.getDeviceId());
+					logTrace("App Name: " + Polljoy.getApp().getAppName());
+					logTrace("defaultImageUrl: "
+							+ Polljoy.getApp().getDefaultImageUrl());
+					logTrace("maximumPollPerSession: "
+							+ Polljoy.getApp().getMaximumPollPerSession());
+					logTrace("maximumPollPerDay: "
+							+ Polljoy.getApp().getMaximumPollPerDay());
+					logTrace("maximumPollInARow: "
+							+ Polljoy.getApp().getMaximumPollInARow());
+					logTrace("backgroundColor: "
+							+ Integer.toHexString(Polljoy.getApp()
+									.getBackgroundColor()));
+					logTrace("borderColor: "
+							+ Integer.toHexString(Polljoy.getApp()
+									.getBorderColor()));
+					logTrace("buttonColor: "
+							+ Integer.toHexString(Polljoy.getApp()
+									.getButtonColor()));
+					logTrace("fontColor: "
+							+ Integer.toHexString(Polljoy.getApp()
+									.getFontColor()));
+					hasShownAppInfo = true;
+				}
+			}
 			logTextView.setText(log);
 			scrollLogToBottom();
 		} catch (NullPointerException e) {
@@ -193,10 +202,10 @@ public class MainActivity extends Activity implements PolljoyDelegate {
 	public void PJPollIsReady(ArrayList<PJPoll> polls) {
 		// pause your app and save any status if needed
 
+		logTrace("PJPollIsReady: " + polls.toString());
+
 		// update session log
 		updateSessionLog();
-
-		logTrace("PJPollIsReady: " + polls.toString());
 
 		showPollButton.setEnabled(true);
 

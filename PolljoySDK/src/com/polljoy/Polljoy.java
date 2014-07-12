@@ -6,17 +6,27 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Point;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
+import android.view.Display;
+import android.view.WindowManager;
 
 import com.polljoy.PJAsyncTask.PJAsyncTaskListener;
 import com.polljoy.PJPollViewActivity.PJPollViewActivityDelegate;
-import com.polljoy.internal.ImageDownloader;
 import com.polljoy.internal.Log;
 import com.polljoy.internal.PolljoyCore;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Picasso.LoadedFrom;
+import com.squareup.picasso.RequestCreator;
+import com.squareup.picasso.Target;
 
 public class Polljoy {
 	public interface PolljoyDelegate {
@@ -69,11 +79,15 @@ public class Polljoy {
 	static boolean _isSandboxMode = false;
 
 	// Android only
+	static PJScreenType _screenType;
 	public final static String TAG = "Polljoy";
 	static PJStartSessionAsyncTask _startSessionTask = null;
 	static PJGetPollAsyncTask _getPollTask = null;
 	static PJResponsePollAsyncTask _responsePollAsyncTask = null;
-	static ImageDownloader _imageDownloader = new ImageDownloader();
+	static int _currentShowingPollToken = Integer.MIN_VALUE;
+	static ArrayList<Target> imageCacheTargets = new ArrayList<Target>();
+	public final static int BORDER_IMAGE_MAX_LENGTH = 800;
+
 	static PJPollViewActivityDelegate _pollViewActivityDelegate = new PJPollViewActivityDelegate() {
 
 		@Override
@@ -82,6 +96,23 @@ public class Polljoy {
 			String response = poll.response;
 			int pollToken = poll.pollToken;
 			Polljoy.responsePoll(pollToken, response);
+			if (poll.type.equals("M")) {
+				String url = poll.choiceUrl.get(response);
+				try {
+					Uri uri = Uri.parse(url);
+					Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+					pollView.startActivity(intent);
+				} catch (android.content.ActivityNotFoundException e) {
+					Log.d(TAG, "Url: " + url);
+					Log.d(TAG,
+							"ActivityNotFoundException: "
+									+ e.getLocalizedMessage());
+					e.printStackTrace();
+				} catch (NullPointerException e) {
+					e.printStackTrace();
+				}
+			}
+
 			if (poll.virtualAmount > 0) {
 				pollView.showActionAfterResponse();
 			} else {
@@ -89,6 +120,7 @@ public class Polljoy {
 				_polls.remove(matchedPoll);
 				if (_polls.size() > 0) {
 					pollView.finish();
+					_currentShowingPollToken = Integer.MIN_VALUE;
 					showPoll();
 				} else {
 					pollView.showActionAfterResponse();
@@ -108,6 +140,7 @@ public class Polljoy {
 				_delegate.PJPollDidSkipped(poll);
 			}
 			pollView.finish();
+			_currentShowingPollToken = Integer.MIN_VALUE;
 			PJPoll matchedPoll = getPollWithToken(poll.pollToken);
 			_polls.remove(matchedPoll);
 			if (_polls.size() > 0) {
@@ -120,6 +153,7 @@ public class Polljoy {
 				PJPoll poll) {
 			PJPoll matchedPoll = getPollWithToken(poll.pollToken);
 			_polls.remove(matchedPoll);
+			_currentShowingPollToken = Integer.MIN_VALUE;
 			if (_polls.size() > 0) {
 				if (poll.virtualAmount > 0) {
 					if (_delegate != null) {
@@ -152,6 +186,14 @@ public class Polljoy {
 
 	};
 
+	@SuppressLint("NewApi")
+	private static void executeTask(PJAsyncTask task) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+		else
+			task.execute();
+	}
+
 	public static String getAPIEndpoint() {
 		return _isSandboxMode ? PJ_API_SANDBOX_endpoint : PJ_API_endpoint;
 	}
@@ -167,6 +209,12 @@ public class Polljoy {
 			return;
 		}
 		_appContext = context;
+		Picasso.with(_appContext).setLoggingEnabled(Log.loggingEnabled);
+		WindowManager windowManager = (WindowManager) _appContext
+				.getSystemService(Context.WINDOW_SERVICE);
+		Display display = windowManager.getDefaultDisplay();
+		Point screenSize = PJScreenConfiguration.getRealSizeForDisplay(display);
+		_screenType = PJScreenType.screenTypeForScreenSize(screenSize);
 		_sessionId = null;
 		_deviceId = PolljoyCore.getDeviceId(_appContext);
 		_deviceModel = PolljoyCore.getDeviceModel();
@@ -179,7 +227,6 @@ public class Polljoy {
 		_session = newSession ? PolljoyCore.getNewSession(_appContext)
 				: PolljoyCore.getCurrentSession(_appContext);
 		_timeSinceInstall = (int) PolljoyCore.getTimeSinceInstall(_appContext);
-
 		_startSessionTask = new PJStartSessionAsyncTask(_appId, _deviceId);
 		_startSessionTask.taskListener = new PJAsyncTaskListener() {
 
@@ -194,24 +241,21 @@ public class Polljoy {
 						_app = app;
 						_sessionId = appJson.optString("sessionId");
 						_userId = appJson.optString("userId");
-						if (_app.defaultImageUrl != null
-								&& !_app.defaultImageUrl.equals("null")) {
-							downloadAppImage(_app.defaultImageUrl);
-						}
-						Log.v(TAG, "startSession " + "_sessionId: "
+						downloadAppImages();
+						Log.i(TAG, "startSession " + "_sessionId: "
 								+ _sessionId);
-						Log.v(TAG, "startSession " + "_deviceId: " + _deviceId);
-						Log.v(TAG, "startSession " + "_deviceModel: "
+						Log.i(TAG, "startSession " + "_deviceId: " + _deviceId);
+						Log.i(TAG, "startSession " + "_deviceModel: "
 								+ _deviceModel);
-						Log.v(TAG, "startSession " + "_deviceOS: " + _deviceOS);
-						Log.v(TAG, "startSession " + "_devicePlatform: "
+						Log.i(TAG, "startSession " + "_deviceOS: " + _deviceOS);
+						Log.i(TAG, "startSession " + "_devicePlatform: "
 								+ _devicePlatform);
-						Log.v(TAG,
+						Log.i(TAG,
 								"startSession " + "_session: "
 										+ String.valueOf(_session));
-						Log.v(TAG, "startSession " + "_timeSinceInstall: "
+						Log.i(TAG, "startSession " + "_timeSinceInstall: "
 								+ String.valueOf(_timeSinceInstall));
-						Log.v(TAG, "startSession " + "App: " + _app.appName);
+						Log.i(TAG, "startSession " + "App: " + _app.appName);
 					} else {
 						Log.e(TAG, Polljoy.PJ_SDK_NAME + ": Error - Status: "
 								+ String.valueOf(status));
@@ -233,7 +277,7 @@ public class Polljoy {
 			}
 
 		};
-		_startSessionTask.execute();
+		executeTask(_startSessionTask);
 	}
 
 	public static void getPoll() {
@@ -344,6 +388,7 @@ public class Polljoy {
 					if (status == PJResponseStatus.PJSuccess.statusCode()) {
 						JSONArray pollsJsonArray = jsonObject
 								.getJSONArray("polls");
+						int count = 0;
 						for (int i = 0; i < pollsJsonArray.length(); i++) {
 							try {
 								JSONObject pollRequest = (JSONObject) pollsJsonArray
@@ -356,13 +401,18 @@ public class Polljoy {
 									_polls.remove(matchedPoll);
 								}
 								_polls.add(poll);
-
+								if (count == 0) {
+									_app = poll.app;
+								} else {
+									poll.app = _app;
+								}
+								count++;
 							} catch (NullPointerException e) {
 								e.printStackTrace();
 							}
 						}
 						for (PJPoll poll : _polls) {
-							downloadPollImage(poll);
+							downloadPollImages(poll);
 						}
 					} else {
 						Log.e(TAG, Polljoy.PJ_SDK_NAME + ": Error - Status: "
@@ -389,7 +439,7 @@ public class Polljoy {
 			}
 
 		};
-		_getPollTask.execute();
+		executeTask(_getPollTask);
 	}
 
 	public static void responsePoll(long pollToken, String response) {
@@ -408,9 +458,9 @@ public class Polljoy {
 								.optString("virtualAmount");
 						String responseString = jsonObject
 								.optString("response");
-						Log.v(TAG, "status: " + status + " message: " + message);
-						Log.v(TAG, "response: " + responseString);
-						Log.v(TAG, "virtualAmount: " + virtualAmount);
+						Log.i(TAG, "status: " + status + " message: " + message);
+						Log.i(TAG, "response: " + responseString);
+						Log.i(TAG, "virtualAmount: " + virtualAmount);
 					} else {
 						Log.e(TAG, Polljoy.PJ_SDK_NAME + ": Error - Status: "
 								+ status + " (" + message + ")");
@@ -432,11 +482,27 @@ public class Polljoy {
 			}
 
 		};
-		_responsePollAsyncTask.execute();
+		executeTask(_responsePollAsyncTask);
+	}
+
+	public static void checkPollImagesStatus(PJPoll poll) {
+		if (!poll.isReadyToShow) {
+			Log.d(TAG,
+					"checkPollImagesStatus, poll("
+							+ String.valueOf(poll.pollId) + ") imageStatus = "
+							+ poll.imageStatus);
+			if (PJPollImageStatus.PJPollAllImageReady.getStatusCode() == poll.imageStatus) {
+				poll.isReadyToShow = true;
+				Log.i(TAG, "Poll(" + String.valueOf(poll.pollId)
+						+ ") isReadyToShow");
+				checkPollStatus();
+			}
+		}
 	}
 
 	public static void checkPollStatus() {
 		try {
+			Log.d(TAG, "checkPollStatus");
 			if (_polls.size() < 1) {
 				return;
 			}
@@ -447,7 +513,7 @@ public class Polljoy {
 				}
 			}
 			if (pollsAreReady) {
-				Log.i(TAG, "Polls are ready.");
+				Log.i(TAG, "Polls are ready. numOfPolls = " + _polls.size());
 				if (_delegate != null) {
 					_delegate.PJPollIsReady(_polls);
 				}
@@ -463,62 +529,228 @@ public class Polljoy {
 		return;
 	}
 
-	static void downloadAppImage(String imageUrl) {
-		if (imageUrl != null && !imageUrl.equals("null")) {
-			_imageDownloader.download(imageUrl, null,
-					new ImageDownloader.CompletionHandler() {
+	// ImageUrl handling
 
-						@Override
-						public void imageDownloaded(Bitmap bitmap) {
-							Log.v(TAG, "downloadAppImage completed");
-						}
-					});
+	static boolean isUrlValid(String url) {
+		if (url != null && !url.equals("null") && url.length() > 0) {
+			return true;
+		}
+		return false;
+	}
+
+	static void downloadAppImages() {
+		PJPollImageUrlSet imageUrlSet = _app
+				.imageUrlSetForScreenType(_screenType);
+		downloadAppImage(imageUrlSet.pollImageUrl, "defaultImageUrl");
+		downloadAppImage(imageUrlSet.rewardImageUrl, "rewardImageUrl");
+		downloadAppImage(imageUrlSet.borderImageL, "borderImageL",
+				BORDER_IMAGE_MAX_LENGTH);
+		downloadAppImage(imageUrlSet.borderImageP, "borderImageP",
+				BORDER_IMAGE_MAX_LENGTH);
+		downloadAppImage(imageUrlSet.buttonImageL, "buttonImageL");
+		downloadAppImage(imageUrlSet.buttonImageP, "buttonImageP");
+	}
+
+	synchronized static void addCacheTarget(Target target) {
+		imageCacheTargets.add(target);
+	}
+
+	synchronized static void removeCacheTarget(Target target) {
+		imageCacheTargets.remove(target);
+	}
+
+	static void downloadAppImage(String imageUrl, final String name) {
+		downloadAppImage(imageUrl, name, 0);
+	}
+
+	static void downloadAppImage(String imageUrl, final String name,
+			int maxLength) {
+		if (isUrlValid(imageUrl)) {
+			Target target = new Target() {
+				@Override
+				public void onBitmapFailed(Drawable arg0) {
+					Log.i(TAG, "downloadAppImage: download " + name + " failed");
+					removeCacheTarget(this);
+				}
+
+				@Override
+				public void onBitmapLoaded(Bitmap arg0, LoadedFrom arg1) {
+					Log.i(TAG, "downloadAppImage: download " + name
+							+ " completed");
+					removeCacheTarget(this);
+				}
+
+				@Override
+				public void onPrepareLoad(Drawable arg0) {
+				}
+			};
+			addCacheTarget(target);
+			RequestCreator request = Picasso.with(_appContext).load(imageUrl);
+			if (maxLength > 0) {
+				request.resize(maxLength, maxLength).centerInside();
+			}
+			request.into(target);
 		}
 		return;
 	}
 
-	static void downloadPollImage(final PJPoll poll) {
+	static void downloadPollImages(final PJPoll poll) {
 		if (poll == null) {
 			return;
 		}
-		String imageUrl = null;
-		try {
-			if (poll.pollImageUrl != null && !poll.pollImageUrl.equals("null")) {
-				imageUrl = poll.pollImageUrl;
-			} else if (poll.appImageUrl != null
-					&& !poll.appImageUrl.equals("null")) {
-				imageUrl = poll.appImageUrl;
-			}
-			if (imageUrl != null) {
-				final String urlToDownload = imageUrl;
-				poll.imageUrlToDisplay = null;
-				_imageDownloader.download(urlToDownload, null,
-						new ImageDownloader.CompletionHandler() {
 
-							@Override
-							public void imageDownloaded(Bitmap bitmap) {
-								Log.v(TAG, "downloadPollImage completed");
-								if (bitmap != null) {
-									poll.imageUrlToDisplay = urlToDownload;
-								} else {
-									// leave imageUrlToDisplay null
-								}
-								poll.isReadyToShow = true;
-								checkPollStatus();
-							}
-						});
+		downloadPollImage("pollImage", poll.pollImageUrl, poll.appImageUrl,
+				new PollImageDownloadingCompletionHandler() {
+					@Override
+					public void imageDownloadedForUrl(String downloadedUrl) {
+						poll.imageUrlSetForDisplay.pollImageUrl = downloadedUrl;
+						boolean isUsingFallbackUrl = !(downloadedUrl != null && downloadedUrl
+								.equals(poll.pollImageUrl));
+						PJPollImageUrlSet defaultImageUrlSet = _app
+								.imageUrlSetForScreenType(_screenType);
+						if (isUsingFallbackUrl) {
+							poll.imageUrlSetForDisplay.pollImageCornerRadius = defaultImageUrlSet.pollImageCornerRadius;
+						} else {
+							poll.imageUrlSetForDisplay.pollImageCornerRadius = poll.imageCornerRadius;
+						}
+						poll.imageStatus |= PJPollImageStatus.PJPollDefaultImageReady
+								.getStatusCode();
+						checkPollImagesStatus(poll);
+					}
+				});
+		downloadPollImage("pollRewardImageUrl", poll.pollRewardImageUrl,
+				poll.app.rewardImageUrl,
+				new PollImageDownloadingCompletionHandler() {
+					@Override
+					public void imageDownloadedForUrl(String downloadedUrl) {
+						poll.imageUrlSetForDisplay.rewardImageUrl = downloadedUrl;
+						poll.imageStatus |= PJPollImageStatus.PJPollRewardImageReady
+								.getStatusCode();
+						checkPollImagesStatus(poll);
+					}
+				});
+		downloadPollImage("closeButtonImageUrl", poll.app.closeButtonImageUrl,
+				null, new PollImageDownloadingCompletionHandler() {
+					@Override
+					public void imageDownloadedForUrl(String downloadedUrl) {
+						poll.imageUrlSetForDisplay.closeButtonImageUrl = downloadedUrl;
+						poll.imageStatus |= PJPollImageStatus.PJPollCloseButtonImageReady
+								.getStatusCode();
+						checkPollImagesStatus(poll);
+					}
+				});
+		PJPollImageUrlSet imageUrlSet = _app
+				.imageUrlSetForScreenType(_screenType);
+		downloadPollImage("borderImageL", imageUrlSet.borderImageL, null,
+				BORDER_IMAGE_MAX_LENGTH,
+				new PollImageDownloadingCompletionHandler() {
+					@Override
+					public void imageDownloadedForUrl(String downloadedUrl) {
+						poll.imageUrlSetForDisplay.borderImageL = downloadedUrl;
+						poll.imageStatus |= PJPollImageStatus.PJPollBorderLImageReady
+								.getStatusCode();
+						checkPollImagesStatus(poll);
+					}
+				});
+		downloadPollImage("borderImageP", imageUrlSet.borderImageP, null,
+				BORDER_IMAGE_MAX_LENGTH,
+				new PollImageDownloadingCompletionHandler() {
+					@Override
+					public void imageDownloadedForUrl(String downloadedUrl) {
+						poll.imageUrlSetForDisplay.borderImageP = downloadedUrl;
+						poll.imageStatus |= PJPollImageStatus.PJPollBorderPImageReady
+								.getStatusCode();
+						checkPollImagesStatus(poll);
+					}
+				});
+		downloadPollImage("buttonImageL", imageUrlSet.buttonImageL, null,
+				new PollImageDownloadingCompletionHandler() {
+					@Override
+					public void imageDownloadedForUrl(String downloadedUrl) {
+						poll.imageUrlSetForDisplay.buttonImageL = downloadedUrl;
+						poll.imageStatus |= PJPollImageStatus.PJPollButtonLImageReady
+								.getStatusCode();
+						checkPollImagesStatus(poll);
+					}
+				});
+		downloadPollImage("buttonImageP", imageUrlSet.buttonImageP, null,
+				new PollImageDownloadingCompletionHandler() {
+					@Override
+					public void imageDownloadedForUrl(String downloadedUrl) {
+						poll.imageUrlSetForDisplay.buttonImageP = downloadedUrl;
+						poll.imageStatus |= PJPollImageStatus.PJPollButtonPImageReady
+								.getStatusCode();
+						checkPollImagesStatus(poll);
+					}
+				});
+	}
+
+	public interface PollImageDownloadingCompletionHandler {
+		void imageDownloadedForUrl(String downloadedUrl);
+	}
+
+	static void downloadPollImage(final String name, final String imageUrl,
+			final String fallbackImageUrl, int maxLength,
+			final PollImageDownloadingCompletionHandler completionHandler) {
+		String url = null;
+		try {
+			if (isUrlValid(imageUrl)) {
+				url = imageUrl;
+			} else if (isUrlValid(fallbackImageUrl)) {
+				url = fallbackImageUrl;
+			}
+			if (url != null) {
+				final String urlToDownload = url;
+				Target target = new Target() {
+					@Override
+					public void onBitmapFailed(Drawable arg0) {
+						Log.i(TAG, "downloadPollImage: download " + name
+								+ " failed");
+						completionHandler.imageDownloadedForUrl(null);
+						removeCacheTarget(this);
+					}
+
+					@Override
+					public void onBitmapLoaded(Bitmap arg0, LoadedFrom arg1) {
+						Log.i(TAG, "downloadPollImage: download " + name
+								+ " completed");
+						completionHandler.imageDownloadedForUrl(urlToDownload);
+						removeCacheTarget(this);
+					}
+
+					@Override
+					public void onPrepareLoad(Drawable arg0) {
+					}
+				};
+				addCacheTarget(target);
+				RequestCreator request = Picasso.with(_appContext).load(
+						urlToDownload);
+				if (maxLength > 0) {
+					request.resize(maxLength, maxLength).centerInside();
+				}
+				request.into(target);
 			} else {
-				poll.isReadyToShow = true;
-				checkPollStatus();
+				completionHandler.imageDownloadedForUrl(null);
 			}
 		} catch (NullPointerException e) {
 			e.printStackTrace();
-			poll.isReadyToShow = true;
-			checkPollStatus();
+			if (completionHandler != null) {
+				completionHandler.imageDownloadedForUrl(null);
+			}
 		}
 	}
 
+	static void downloadPollImage(final String name, final String imageUrl,
+			final String fallbackImageUrl,
+			final PollImageDownloadingCompletionHandler completionHandler) {
+		downloadPollImage(name, imageUrl, fallbackImageUrl, 0,
+				completionHandler);
+	}
+
 	public static void showPoll() {
+		if (_currentShowingPollToken != Integer.MIN_VALUE) {
+			return;
+		}
 		if (_polls != null && _polls.size() > 0) {
 			PJPoll poll = _polls.get(0);
 			showPoll(poll);
@@ -533,10 +765,11 @@ public class Polljoy {
 		if (_delegate != null) {
 			_delegate.PJPollWillShow(poll);
 		}
-
+		_currentShowingPollToken = poll.pollToken;
 		Intent intent = new Intent(_appContext,
 				com.polljoy.PJPollViewActivity.class);
-		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+				| Intent.FLAG_FROM_BACKGROUND);
 		intent.putExtra("Poll", poll);
 		_appContext.startActivity(intent);
 
@@ -565,6 +798,7 @@ public class Polljoy {
 		return null;
 	}
 
+	// setters and getters
 	public static PolljoyDelegate getDelegate() {
 		return _delegate;
 	}
@@ -717,7 +951,4 @@ public class Polljoy {
 		return _pollViewActivityDelegate;
 	}
 
-	public static ImageDownloader getImageDownloader() {
-		return _imageDownloader;
-	}
 }

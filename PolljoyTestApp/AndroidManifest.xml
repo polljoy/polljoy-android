@@ -28,7 +28,8 @@
         </activity>
         <activity
             android:name="com.polljoy.PJPollViewActivity"
-            android:launchMode="singleInstance"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleTop"
             android:theme="@android:style/Theme.Translucent" >
         </activity>
     </application>

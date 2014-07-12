@@ -2,6 +2,7 @@ package com.polljoy.internal;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.UUID;
 
 import android.content.Context;
@@ -30,6 +31,21 @@ public class PolljoyCore {
 		return model;
 	}
 
+	public static boolean isAmazonKindle() {
+	String manufacturer = Build.MANUFACTURER;
+	try {
+		if(manufacturer.equalsIgnoreCase("amazon")) {
+			String model = Build.MODEL.toLowerCase(Locale.US);
+//			String[] kindleFireModels = {"KFAPWA","KFAPWI","KFTHWA","KFTHWI","KFSOWI","KFJWA","KFJWI","KFTT","KFOT","Kindle Fire"};
+			if(model.startsWith("kf") || model.startsWith("kindle")) {
+				return true;
+			}
+		}
+	} catch(NullPointerException e) {
+	}
+
+	return false;
+}
 	public static Drawable defaultImage(Context context) {
 		if (context != null) {
 			return context.getResources().getDrawable(R.drawable.polljoy);

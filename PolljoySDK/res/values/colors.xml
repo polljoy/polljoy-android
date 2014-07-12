@@ -5,5 +5,6 @@
     <color name="pj_black">#FF000000</color>
     <color name="pj_white">#FFFFFFFF</color>
     <color name="pj_gray">#888888</color>
+    <color name="pj_alpha_green">#4000FF00</color>
     
 </resources>

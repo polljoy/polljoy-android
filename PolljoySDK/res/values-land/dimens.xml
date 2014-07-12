@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <dimen name="poll_view_width">368dp</dimen>
+    <dimen name="poll_view_width">540dp</dimen>
     <dimen name="poll_view_height">288dp</dimen>
-    <dimen name="close_button_width">30dp</dimen>
-    <dimen name="close_button_height">30dp</dimen>
+    <dimen name="close_button_width">20dp</dimen>
+    <dimen name="close_button_height">20dp</dimen>
     <dimen name="close_button_margin_top">5dp</dimen>
     <dimen name="close_button_margin_right">5dp</dimen>
     <dimen name="poll_image_margin_left">12dp</dimen>
@@ -15,14 +15,14 @@
     <dimen name="multi_choice_button_margin_left">10dp</dimen>
     <dimen name="multi_choice_button_margin_right">10dp</dimen>
     <dimen name="multi_choice_button_margin_bottom">8dp</dimen>
-    <dimen name="multi_choice_button_text_size">17sp</dimen>
-    <dimen name="reward_text_view_text_size">30sp</dimen>
-    <dimen name="reward_text_view_height">44dp</dimen>
-    <dimen name="reward_text_view_margin_left">10dp</dimen>
-    <dimen name="reward_text_view_margin_right">10dp</dimen>
-    <dimen name="virtual_amount_text_view_text_size">32sp</dimen>
-    <dimen name="virtual_amount_text_view_height">44dp</dimen>
-    <dimen name="virtual_amount_text_view_margin_top">-6dp</dimen>
+    <dimen name="multi_choice_button_text_size">15sp</dimen>
+    <dimen name="reward_text_view_text_size">15sp</dimen>
+    <dimen name="reward_text_view_height">15dp</dimen>
+    <dimen name="reward_text_view_margin_left">0dp</dimen>
+    <dimen name="reward_text_view_margin_right">0dp</dimen>
+    <dimen name="virtual_amount_text_view_text_size">15sp</dimen>
+    <dimen name="virtual_amount_text_view_height">15dp</dimen>
+    <dimen name="virtual_amount_text_view_margin_top">0dp</dimen>
     <dimen name="question_text_view_text_size">24sp</dimen>
     <dimen name="question_text_view_height">64dp</dimen>
     <dimen name="question_text_view_margin_top">8dp</dimen>
@@ -36,13 +36,5 @@
     <dimen name="collect_button_margin_left">10dp</dimen>
     <dimen name="collect_button_margin_right">10dp</dimen>
     <dimen name="collect_button_margin_bottom">30dp</dimen>
-    <dimen name="money_bag_width">112dp</dimen>
-    <dimen name="money_bag_height">112dp</dimen>
-    <dimen name="money_bag_margin_top">10dp</dimen>
-    <dimen name="money_bag_margin_right">10dp</dimen>
-    <!-- landscape only -->
-    <dimen name="virtual_amount_text_view_margin_bottom">22dp</dimen>
-    <dimen name="money_bag_margin_bottom">11dp</dimen>
-    <dimen name="money_bag_margin_left">12dp</dimen>
 
 </resources>
