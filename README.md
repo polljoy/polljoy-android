@@ -58,7 +58,7 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
 
  polljoy works in the background to avoid interruption to your app's main thread.
  
- polljoy requires each app to register a session and obtain the **Session ID** for all communications to the API. To have best performance and integration, we recommend registering the session at application startup. You'll need your **App ID** (they are available in the web [admin panel](https://admin.polljoy.com)
+ polljoy requires each app to register a session and obtain the **Session ID** for all communications to the API. To have best performance and integration, we recommend registering the session at application startup. You'll need your **App ID** (they are available in the web [admin panel](https://admin.polljoy.com/applications/app)
  
  To register a session:
  
