@@ -41,7 +41,8 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
  ``` java
  <activity
  android:name="com.polljoy.PJPollViewActivity"
- android:launchMode="singleInstance"
+ android:configChanges="orientation|screenSize|keyboardHidden"
+ android:launchMode="singleTop"
  android:theme="@android:style/Theme.Translucent" >
  </activity>
  ```
@@ -194,6 +195,10 @@ If you issue a virtual currency amount to user, you MUST implement this method t
 #### Got questions? Email us at help@polljoy.com
 
 ## Version History
+
+### Version 1.1
+ - a new UI layout
+ - support new custom layout settings a in admin panel
 
 ### Version 1.0
  - Stable public release
