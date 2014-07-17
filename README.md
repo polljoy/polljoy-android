@@ -95,7 +95,19 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
 
 After you started the session, you can get polls at any time and place you want!
 
-In your program logic, import `com.polljoy.Polljoy; ` at the program you want to get polls. Then call:
+In your program logic, import `com.polljoy.Polljoy; ` at the program you want to get polls. The most simple call is:
+ ``` java
+  // ...
+  // if you DON'T need to handle callbacks from Polljoy
+  // this will auto show the polls when all polls are ready
+     Polljoy.getPoll();
+  // ...
+ ```
+ 
+The call has no poll selection criteria (it will appear to all users), the SDK handle everything for you. The poll will auto-show once it is ready. The call will set appVersion to null, level to 0 and userType to non-pay user.
+ 
+
+To filter the user by some specific criterias, call:
 
  ``` java
  // ...
@@ -118,14 +130,7 @@ In summary:
 
 Please check `Polljoy.java` for the type of the parameters. polljoy's API is open. All data returned is passed back to the delegate. Delegate can use the returned poll data for their own control if needed.
 
-`NOTE: if you don't use any poll selection criteria, you can simply call the following method and let the SDK handle everything.
 
-  ``` java
-  // if you DON'T need to handle callbacks from Polljoy
-  // this will auto show the polls when all polls are ready
-      Polljoy.getPoll();
-  // ...
-  ```
   
 ### Handle callbacks from SDK
 
