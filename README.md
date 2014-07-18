@@ -107,13 +107,16 @@ In your program logic, import `com.polljoy.Polljoy; ` at the program you want to
 The call has no poll selection criteria (it will appear to all users), the SDK handle everything for you. The poll will auto-show once it is ready. The call will set appVersion to null, level to 0 and userType to non-pay user.
  
 
-To filter the user by some specific criterias, call:
+To filter the user by some specific criterias, call the following function, which has the complete parameters list
 
  ``` java
  // ...
    Polljoy.getPoll(appVersion, 
-   		   level, 
+   		   level,
+   		   session,
+   		   timeSinceInstall,
    		   userType,
+   		   tags,
    		   delegate);
  // ...
  ```
@@ -122,9 +125,15 @@ In summary:
 
 `appVersion`: your app's version to be used as a poll selection criteria. This should match with your poll setting. Or set it as nil if you are not using.
 
-`level`: if your app is a game app, this is your game level. This should match with your poll setting. Or set it as 0 if you are not using.
+`level`: if your app is a game app, this is your game level. This should match with your poll setting. Or set it as 0 if you are not using it.
+
+`session`: This is used to keep track of how many times the user has started a polljoy session. If your app keeps track of how many times the app has been launched, you can pass that variable here. Otherwise leave it to 0 and the polljoy SDK will handle it. 
+
+`timeSinceInstall`: If your app tracks how long the app has been installed, pass the variable here. Leave it to 0 will let polljoy does the job. (We count in days)
 
 `userType`: your app user type either **Pay** or **Non-Pay**. This is the `ENUM PJUserType` as defined in `Polljoy.java`
+
+`tags`: If you app uses tags to select polls, you pass the tags here. Please remember this has to match your settings in admin panel. Tags are passed in the string format `TAGNAME,TAGNAME#RANGE` For example, if you want to ask the specific question to male users that are 18, you can put a tag like `MALE,AGE#18`
 
 `delegate`: the instance to handle all callbacks from polljoy SDK. The delegate should implement `PolljoyDelegate` as defined in `Polljoy.java`
 
