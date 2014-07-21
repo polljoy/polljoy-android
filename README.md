@@ -1,4 +1,4 @@
-![Picture](http://www.polljoy.com/assets/images/logo/logo.png)
+![Picture](http://www.polljoy.com/assets/images/logo/polljoy-logo.png)
 > In-app polls made easy. Integrate in 2 lines of code.
 
 #Polljoy Android Integration Guide
@@ -207,27 +207,3 @@ If you issue a virtual currency amount to user, you MUST implement this method t
  
 -
 #### Got questions? Email us at help@polljoy.com
-
-## Version History
-
-### Version 1.1
- - a new UI layout
- - support new custom layout settings a in admin panel
-
-### Version 1.0
- - Stable public release
-
-### Version 0.3
-
- - fix a bug that is caused when the colorString is "000"
- - remove unused values and images.
- - rename colornames to prevent conflicts
-
-### Version 0.2
- - fix a bug that the poll doesn't show when both its app image and poll image are not set
- - support ',' in multiple choice answers
- - added tags as selection criteria (reserved for future use)
- - PJPoll structure updated
-
-### Version 0.1
- - Initial beta release
