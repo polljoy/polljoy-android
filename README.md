@@ -1,32 +1,20 @@
 ![Picture](http://www.polljoy.com/assets/images/logo/polljoy-logo-github.png)
-> In-app polls made easy. Integrate in 2 lines of code.
 
-#Polljoy Android Integration Guide
-
-Welcome friend! This guide will get you started with polljoy, fast & easy.
-
-Got questions?  Email us at help@polljoy.com
-
--
-<b>Simple</b> - polljoy is designed to be simple for users and especially developers. Just 2 API calls, you can get your polls running.
-
-<b>Open</b> - The polljoy API is open. The SDK comes with all source code and a test app. You can simply install the SDK as-is to integrate the polljoy service.
-
-<b>Easy</b> - polljoy is easy to use. Check out the test App in the SDK. Test with your own user id and app id. You can see how polljoy works. 
-
-<b>Flexible</b> - the polljoy SDK comes with the required UI to present the poll and do all the tasks for you. But if you want to implement your own UI, you can. The poll data is open. Enjoy!
+In-app polls made easy. Just 2 API calls.
 
 
-# The polljoy Admin Console
-You can setup and manage all your polls through a web interface here https://admin.polljoy.com
+#Intro
+Hi friend! Let's add polljoy to your amazing Android app. It's simple, you'll be up in minutes.
 
-Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.  
+Questions? - email help@polljoy.com and one of our devs will assist!
 
-# Setup your Android Project
+#Web console
+Polls are created and managed through our web interface - https://admin.polljoy.com
 
-1.	Copy Polljoy SDK Archived File to your project workspace folder and unzip, you will see two projects there: PolljoySDK and PolljoyTestApp.
-2.	In eclipse, import PolljoySDK project into your workspace.
-3.	Add PolljoySDK project as a reference project in your project settings.
+#Steps
+1.	Copy the Polljoy SDK Archived File to your project workspace folder and unzip. You'll see two projects: PolljoySDK and PolljoyTestApp.
+2.	In Eclipse, import the PolljoySDK project into your workspace.
+3.	Add the PolljoySDK project as a reference project in your project settings:
 
   ![Picture](Doc/setup.png)
 
@@ -36,7 +24,7 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
  <uses-permission android:name="android.permission.INTERNET" />
  ```
  
-5.	Again in `AndroidManifest.xml`, declare `PJPollViewActivity` by adding the following lines between `<application>` and `</application>`:
+5. Again in `AndroidManifest.xml`, declare `PJPollViewActivity` by adding the following lines between `<application>` and `</application>`:
 
  ``` java
  <activity
@@ -48,21 +36,18 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
  ```
 
 
-### Implement polljoy in Project
+###Start session
+polljoy works in the background to avoid interrupting your app’s main thread.
 
- Import Polljoy package by adding the following code when you call methods within PolljoySDK:
+Each app starts a session and gets the **Session ID** for all communications to the API. To have best performance and integration, we recommend registering the session at startup. You’ll need your **App ID** (grab it in the web [admin panel](https://admin.polljoy.com/applications/app))
+
+First import the Polljoy package by adding the following code when you call methods within PolljoySDK:
  
  ``` java
  import com.polljoy.Polljoy;
  ``` 
 
- polljoy works in the background to avoid interruption to your app's main thread.
- 
- polljoy requires each app to register a session and obtain the **Session ID** for all communications to the API. To have best performance and integration, we recommend registering the session at application startup. You'll need your **App ID** (they are available in the web [admin panel](https://admin.polljoy.com/applications/app)
- 
- To register a session:
- 
- Upon application startup, call Polljoy to register session with `ApplicationContext` and your **App ID**. You can either add the lines in your custom Application class or your LAUNCHER activity.
+On app startup, call Polljoy to register a session with `ApplicationContext` and your **App ID**. You can either add the lines in your custom Application class or your LAUNCHER activity.
  
  i.	If you add it In your launcher activity: 
 
@@ -74,7 +59,7 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
  // ...
  ```
 
- ii.	Or if you add it In your custom Application class,
+ ii.	Or if you add it in your custom Application class,
  
  ``` java
  // ...
@@ -84,31 +69,27 @@ Note: Please note - PollJoy requires Android SDK level 8 (Android 2.2) or later.
  // ...
  ```
  
- PollJoy SDK will automatically handle all session control and all required information to get the correct poll based on your poll setup in admin panel and save your poll result for analysis. These includes the session ID, session count, time (days) since first call PollJoy SDK, device ID, platform, OS version ... etc. 
+The SDK will automatically handle all session control and required information to get the correct poll based on your poll setup in admin panel and save your poll result for analysis. These includes the session ID, session count, time (days) since first call polljoy SDK, device ID, platform, OS version … etc.
 
- Each time you call `startSession`, SDK will increase the session count by 1. So, you should only call it once for each app launch to get the session count correct.
+Each time you call `startSession`, the SDK will increase the session count by 1. So, you should only call it once for each launch to get the session count correct.
+
+Once the session is started, SDK will cache all app settings including the default image, border image and button image (if any) that you have setup in the [admin panel](https://admin.polljoy.com). After caching, there will be no operation until you request polls from polljoy service.
  
- Once the session is registered, SDK will cache all app settings including the default image (if any) that you have setup in the [admin panel](https://admin.polljoy.com). After caching, there will be no operation until you request polls from PollJoy service.
- 
+### Get poll (simple)
+After you start the session, you can get polls any time and place you want!
 
-### Get polls
-
-After you started the session, you can get polls at any time and place you want!
-
-In your program logic, import `com.polljoy.Polljoy; ` at the program you want to get polls. The most simple call is:
+In your program logic, import `com.polljoy.Polljoy; ` where you want to get polls. Then call:
  ``` java
   // ...
-  // if you DON'T need to handle callbacks from Polljoy
-  // this will auto show the polls when all polls are ready
      Polljoy.getPoll();
+  // use this if you don't need to handle callbacks from polljoy
+  // this will auto show the polls when all polls are ready
   // ...
  ```
  
-The call has no poll selection criteria (it will appear to all users), the SDK handle everything for you. The poll will auto-show once it is ready. The call will set appVersion to null, level to 0 and userType to non-pay user.
- 
+`Note: these are simple version if you will only select polls based on session, timeSinceInstall and platform, or not have any seletion criteria.  If you want more than these, use the full version that follows.
 
-To filter the user by some specific criterias, call the following function, which has the complete parameters list
-
+###Get poll (full)
  ``` java
  // ...
    Polljoy.getPoll(appVersion, 
@@ -123,50 +104,48 @@ To filter the user by some specific criterias, call the following function, whic
   
 In summary:
 
-`appVersion`: your app's version to be used as a poll selection criteria. This should match with your poll setting. Or set it as nil if you are not using.
+`appVersion` (optional) Set to null if you prefer not to send it.  Or you can choose to pass it. eg 1.0.35
 
-`level`: if your app is a game app, this is your game level. This should match with your poll setting. Or set it as 0 if you are not using it.
+`level` (optional) Set as 0 if you prefer not to send it. If your app has levels you can pass them here. eg 34 
 
-`session`: This is used to keep track of how many times the user has started a polljoy session. If your app keeps track of how many times the app has been launched, you can pass that variable here. Otherwise leave it to 0 and the polljoy SDK will handle it. 
+`session` (optional) Set it as 0 and the SDK will send it for you.  Or you can manually send it. eg 3 
 
-`timeSinceInstall`: If your app tracks how long the app has been installed, pass the variable here. Leave it to 0 will let polljoy does the job. (We count in days)
+`timeSinceInstall` (optional) Set it as 0 and the SDK will send it for you.  Or you can manually set it by sending a value for how long the app has been installed (by default, counted in days). eg 5
 
-`userType`: your app user type either **Pay** or **Non-Pay**. This is the `ENUM PJUserType` as defined in `Polljoy.java`
+`userType` Pass back either **Pay** or **Non-Pay**. This is the `ENUM PJUserType` as defined in `Polljoy.java`
 
-`tags`: If you app uses tags to select polls, you pass the tags here. Please remember this has to match your settings in admin panel. Tags are passed in the string format `TAGNAME,TAGNAME#RANGE` For example, if you want to ask the specific question to male users that are 18, you can put a tag like `MALE,AGE#18`
+`tags` (optional) Set to null if you aren't using them.  If your game uses tags to select polls, pass them in string format with as many as you want to send - `TAG,TAG, ... ,TAG`.  TAG is either in the format TAGNAME or TAGNAME:VALUE.  They should match what you defined in the web console. An example of sending back player gender, current energy and where the poll is being called from could be: `MALE,ENERGY#18,PVPMENU`
 
-`delegate`: the instance to handle all callbacks from polljoy SDK. The delegate should implement `PolljoyDelegate` as defined in `Polljoy.java`
+`delegate` (optional) Set to null if not needed. Delegate is the instance to handle all callbacks from polljoy SDK. If used, the delegate should implement `PolljoyDelegate` as defined in `Polljoy.java`
 
 Please check `Polljoy.java` for the type of the parameters. polljoy's API is open. All data returned is passed back to the delegate. Delegate can use the returned poll data for their own control if needed.
 
+### Callbacks
 
-  
-### Handle callbacks from SDK
-
-polljoy will inform delegate at different stages when polls are downloaded, ready to show, user responded etc. App can optionally implement the delegate methods to control the app logic. The delegate methods are:
+polljoy will inform delegate at different stages when the polls are downloaded, ready to show, user responded etc. The game can optionally implement the delegate methods to control the app logic. The delegate methods are:
 
  ``` java
  void PJPollNotAvailable(PJResponseStatus status);
  ```
  
-When there is no poll match with your selection criteria or no more polls to show in the current session. 
+When there is no poll matching your selection criteria or no more polls to show in the current session.
 
  ``` java
  void PJPollIsReady(ArrayList<PJPoll> polls);
  ```
  
-After you request for poll and poll/s is/are ready to show (including all defined images are downloaded). Friendly tip - If you are displaying the poll in the middle of an active game or app session that needs real time control, consider to pause your app before presenting the poll UI as needed. 
+When poll/s is/are ready to show (including all associated images). Friendly tip - If you are displaying the poll in the middle of an active game or app session that needs real time control, consider to pause your game before presenting the poll UI as needed. 
 
-polls array returned are all the matched polls for the request. Please refer `PJPoll.java` for the data structure.
-When you're ready to present the poll, call:
+The polls array returned are all the matched polls for the request. Please refer `PJPoll.h` for the data structure.
+When you’re ready to present the poll, call:
 
  ``` java
  Polljoy.showPoll();
  ```
 
-This will present the polljoy UI according to your app color and poll settings. Then polljoy SDK will handle all the remaining tasks for you. These include handling the user's response, informing delegate for any virtual amount user received, upload result to polljoy service... etc.
+This will present the polljoy UI according to your app style and poll settings. Then the SDK will handle all the remaining tasks for you. These include handling the user’s response, informing delegate for any virtual amount user received, uploading the result to the console … etc.
 
-We highly recommend you implement this delegate method so that you know polls are ready and call polljoy SDK to show the poll or do whatever control you need.
+We recommend you implement this delegate method so you know when polls are ready and call polljoy SDK to show the poll or do whatever control you need.
 
  ``` java
  void PJPollWillShow(PJPoll poll);
@@ -184,26 +163,28 @@ The polljoy poll UI is ready and has shown. You can do whatever UI control as ne
  void PJPollWillDismiss:(PJPoll poll);
  ```
  
-The polljoy poll UI is finished and will dismiss. You can do whatever UI control as needed. Or simply ignore this implementation. You can prepare your own UI before resuming your app before the polljoy poll UI is dismissed.
+The polljoy poll UI is finished and will dismiss. You can do whatever UI control as needed. Or simply ignore this implementation. You can prepare your own UI before resuming your game before the polljoy poll UI is dismissed.
 
  ``` java
  void PJPollDidDismiss(PJPoll poll);
  ```
  
-The polljoy poll UI is finished and has dismissed. You can do whatever UI control as needed. Or simply ignore this implementation. You can prepare your own UI to resume your app before the polljoy UI is dismissed. This is the last callback from polljoy and all polls are completed. You should resume your app if you have paused.
+The polljoy poll UI is finished and has dismissed. You can do whatever UI control as needed. Or simply ignore this implementation. You can prepare your own UI to resume your game before the polljoy UI is dismissed. This is the last callback from polljoy and all polls are completed. You should resume your game if you have paused.
 
  ``` java
  void PJPollDidResponded(PJPoll poll);
  ```
  
-User has responded to the poll. The poll will contain all the poll data including user's responses. You can ignore this (the results are displayed in the polljoy.com admin console and able to be exported) or use it as you wish.
-If you issue a virtual currency amount to user, you MUST implement this method to handle the virtual amount issued (especially if your app is game). This is the only callback from SDK that informs the app the virtual amount that the user collected.
+User has responded to the poll. The poll will contain all the poll data including user’s responses. You can ignore this (the results are displayed in the web admin console and able to be exported) or use it as you wish.
+If you issue a virtual currency amount to user, you MUST implement this method to handle the virtual amount issued. This is the only callback from SDK that informs the game the virtual amount that the user collected.
 
  ``` java
  void PJPollDidSkipped(PJPoll poll);
  ```
  
- If the poll is not mandatory, user can choose to skip the poll. You can handle this case or simply ignore it safely.
- 
+ If the poll is not mandatory, the user can choose to skip the poll. You can handle this case or simply ignore it safely.
+
 -
-#### Got questions? Email us at help@polljoy.com
+That's it!  Email us at help@polljoy.com if you have questions or suggestions!
+
+ps - love robots? [how about penguins?](https://polljoy.com/world.html)
