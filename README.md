@@ -114,7 +114,7 @@ In summary:
 
 `userType` Pass back either **Pay** or **Non-Pay**. This is the `ENUM PJUserType` as defined in `Polljoy.java`
 
-`tags` (optional) Set to null if you aren't using them.  If your game uses tags to select polls, pass them in string format with as many as you want to send - `TAG,TAG, ... ,TAG`.  TAG is either in the format TAGNAME or TAGNAME:VALUE.  They should match what you defined in the web console. An example of sending back player gender, current energy and where the poll is being called from could be: `MALE,ENERGY#18,PVPMENU`
+`tags` (optional) Set to null if you aren't using them.  If your app uses tags to select polls, pass them in string format with as many as you want to send - `TAG,TAG, ... ,TAG`.  TAG is either in the format TAGNAME or TAGNAME:VALUE.  They should match what you defined in the web console. An example of sending back user gender, number of friends and where the poll is being called from could be: `FEMALE,FRIENDS#88,MAINMENU`
 
 `delegate` (optional) Set to null if not needed. Delegate is the instance to handle all callbacks from polljoy SDK. If used, the delegate should implement `PolljoyDelegate` as defined in `Polljoy.java`
 
@@ -122,7 +122,7 @@ Please check `Polljoy.java` for the type of the parameters. polljoy's API is ope
 
 ### Callbacks
 
-polljoy will inform delegate at different stages when the polls are downloaded, ready to show, user responded etc. The game can optionally implement the delegate methods to control the app logic. The delegate methods are:
+polljoy will inform delegate at different stages when the polls are downloaded, ready to show, user responded etc. Your app can optionally implement the delegate methods to control the app logic. The delegate methods are:
 
  ``` java
  void PJPollNotAvailable(PJResponseStatus status);
@@ -134,7 +134,7 @@ When there is no poll matching your selection criteria or no more polls to show 
  void PJPollIsReady(ArrayList<PJPoll> polls);
  ```
  
-When poll/s is/are ready to show (including all associated images). Friendly tip - If you are displaying the poll in the middle of an active game or app session that needs real time control, consider to pause your game before presenting the poll UI as needed. 
+When poll/s is/are ready to show (including all associated images). Friendly tip - If you are displaying the poll in the middle of an active game or app session that needs real time control, consider to pause your app before presenting the poll UI as needed. 
 
 The polls array returned are all the matched polls for the request. Please refer `PJPoll.h` for the data structure.
 When you’re ready to present the poll, call:
@@ -163,20 +163,20 @@ The polljoy poll UI is ready and has shown. You can do whatever UI control as ne
  void PJPollWillDismiss:(PJPoll poll);
  ```
  
-The polljoy poll UI is finished and will dismiss. You can do whatever UI control as needed. Or simply ignore this implementation. You can prepare your own UI before resuming your game before the polljoy poll UI is dismissed.
+The polljoy poll UI is finished and will dismiss. You can do whatever UI control as needed. Or simply ignore this implementation. You can prepare your own UI before resuming your app before the polljoy poll UI is dismissed.
 
  ``` java
  void PJPollDidDismiss(PJPoll poll);
  ```
  
-The polljoy poll UI is finished and has dismissed. You can do whatever UI control as needed. Or simply ignore this implementation. You can prepare your own UI to resume your game before the polljoy UI is dismissed. This is the last callback from polljoy and all polls are completed. You should resume your game if you have paused.
+The polljoy poll UI is finished and has dismissed. You can do whatever UI control as needed. Or simply ignore this implementation. You can prepare your own UI to resume your app before the polljoy UI is dismissed. This is the last callback from polljoy and all polls are completed. You should resume your app if you have paused.
 
  ``` java
  void PJPollDidResponded(PJPoll poll);
  ```
  
 User has responded to the poll. The poll will contain all the poll data including user’s responses. You can ignore this (the results are displayed in the web admin console and able to be exported) or use it as you wish.
-If you issue a virtual currency amount to user, you MUST implement this method to handle the virtual amount issued. This is the only callback from SDK that informs the game the virtual amount that the user collected.
+If you issue a virtual currency amount to user, you MUST implement this method to handle the virtual amount issued. This is the only callback from SDK that informs the app the virtual amount that the user collected.
 
  ``` java
  void PJPollDidSkipped(PJPoll poll);
