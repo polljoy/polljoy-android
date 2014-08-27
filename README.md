@@ -5,6 +5,8 @@ In-app polls made easy. Just 2 API calls.
 
 #Intro
 Hi friend! Let's add polljoy to your amazing Android app. It's simple, you'll be up in minutes.
+Feel free to check out our integration video walk-through as well!
+[![ScreenShot](Doc/integration.png)](https://www.youtube.com/watch?v=pTwtRQOYFYY)
 
 Questions? - email help@polljoy.com and one of our devs will assist!
 
