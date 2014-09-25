@@ -12,6 +12,7 @@ public enum PJPollImageStatus {
 
 	private final int statusCode;
 
+
 	PJPollImageStatus(int statusCode) {
 		this.statusCode = statusCode;
 	}

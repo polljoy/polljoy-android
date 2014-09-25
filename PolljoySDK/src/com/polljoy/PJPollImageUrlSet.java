@@ -14,6 +14,7 @@ public class PJPollImageUrlSet implements Serializable {
 	String borderImageP = null;
 	String buttonImageL = null;
 	String buttonImageP = null;
+
 	int pollImageCornerRadius = 0;
 
 	PJPollImageUrlSet(String rewardImageUrl, String closeButtonImageUrl,

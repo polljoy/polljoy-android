@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,6 +29,7 @@ public class PJPoll implements Serializable {
 	@Deprecated
 	String choice;
 	String[] choices;
+    Hashtable<String,String> choiceImageUrl = null;
 	boolean randomOrder;
 	boolean mandatory;
 	int virtualAmount;
@@ -81,6 +83,7 @@ public class PJPoll implements Serializable {
 	String virtualCurrency = null;
 	PJApp app = null;
 	int imageStatus;
+    int imagePollStatus = 0;
 	PJPollImageUrlSet imageUrlSetForDisplay = new PJPollImageUrlSet();
 
 	public PJPoll(JSONObject jsonObject) {
@@ -134,7 +137,10 @@ public class PJPoll implements Serializable {
 		this.isReadyToShow = false;
 		JSONArray choicesJsonArray = jsonObject.optJSONArray("choices");
 		this.choices = convertJSONArrayToStringArray(choicesJsonArray);
-		JSONArray tagsJsonArray = jsonObject.optJSONArray("tags");
+		JSONObject choiceImageUrlObject = jsonObject.optJSONObject("choiceImageUrl");
+        this.choiceImageUrl = this.getChoiceImageUrlMapFromJSONObject(choiceImageUrlObject);
+
+        JSONArray tagsJsonArray = jsonObject.optJSONArray("tags");
 		this.tags = convertJSONArrayToStringArray(tagsJsonArray);
 		this.imageUrlToDisplay = null;
 
@@ -205,6 +211,27 @@ public class PJPoll implements Serializable {
 		}
 		return result;
 	}
+
+    Hashtable<String, String> getChoiceImageUrlMapFromJSONObject(
+            JSONObject sourceJsonObject) {
+        Hashtable<String, String> result = null;
+        try {
+            if (sourceJsonObject != null) {
+                result = new Hashtable<String, String>();
+                //@SuppressWarnings("unchecked")
+                Iterator<String> names = sourceJsonObject.keys();
+                while (names.hasNext()) {
+                    String name = names.next();
+                    String imageUrl = sourceJsonObject.optString(name);
+                    result.put(name, imageUrl);
+                }
+            } else {
+            }
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
 
 	public String getAppId() {
 		return appId;
@@ -562,6 +589,10 @@ public class PJPoll implements Serializable {
 		this.choiceUrl = choiceUrl;
 	}
 
+    public Hashtable<String, String> getChoiceImageUrl() {return choiceImageUrl;};
+
+    public void setChoiceImageUrl(Hashtable<String, String> choiceImageUrl) {this.choiceImageUrl = choiceImageUrl;}
+
 	public String getCollectButtonText() {
 		return collectButtonText;
 	}
@@ -681,6 +712,12 @@ public class PJPoll implements Serializable {
 	public void setImageStatus(PJPollImageStatus imageStatus) {
 		this.imageStatus = imageStatus.getStatusCode();
 	}
+
+    public int getImagePollStatus() {return imagePollStatus; }
+
+    public void setImagePollStatus(int ImagePollStatus) {
+        this.imagePollStatus = ImagePollStatus;
+    }
 
 	public PJPollImageUrlSet getImageUrlSetForDisplay() {
 		return imageUrlSetForDisplay;

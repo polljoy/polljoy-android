@@ -13,15 +13,19 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup.MarginLayoutParams;
 import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -41,8 +45,8 @@ public class PJPollViewActivity extends Activity {
 
 		void PJPollViewDidSkipped(PJPollViewActivity pollView, PJPoll poll);
 
-		void PJPollViewCloseAfterReponse(PJPollViewActivity pollView,
-				PJPoll poll);
+		void PJPollViewCloseAfterResponse(PJPollViewActivity pollView,
+                                          PJPoll poll);
 	}
 
 	private PJPoll myPoll;
@@ -52,6 +56,15 @@ public class PJPollViewActivity extends Activity {
 	ImageView borderImageOverlay;
 	ImageView pollImageView;
 	ImageView virtualAmountImageView;
+    View imagePollLayout;
+    ImageTextButton imagePollMain;
+    ImageTextButton imagePoll1;
+    ImageTextButton imagePoll2;
+    ImageTextButton imagePoll3;
+    ImageTextButton imagePoll4;
+    Button imagePollConfirm;
+    int selectedImagePoll;
+
 	View pollView;
 	TextView questionTextView;
 	TextView virtualAmountTextView;
@@ -76,6 +89,8 @@ public class PJPollViewActivity extends Activity {
 	boolean userResponded = false;
 	String resonseText = null;
 	BitmapDrawable borderImageDrawable;
+
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +129,34 @@ public class PJPollViewActivity extends Activity {
 		}
 	}
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        // If we've received a touch notification that the user has touched
+        // outside the app, finish the activity.
+        if (!myPoll.isMandatory() && myPoll.app.closeButtonEasyClose) {
+            if (checkTouchOutside(event)== true){
+                userSkipped(null);
+            }
+        }
+        return true;
+    }
+
+    private boolean checkTouchOutside (MotionEvent event) {
+        if ( event.getRawX() < this.pollView.getLeft()){
+            return true;
+        }
+        if ( event.getRawX() > this.pollView.getRight() ){
+            return true;
+        }
+        if (event.getRawY() < this.pollView.getTop()) {
+            return true;
+        }
+        if (event.getRawY() > this.pollView.getBottom()) {
+            return true;
+        }
+        return false;
+    }
+
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
@@ -126,9 +169,17 @@ public class PJPollViewActivity extends Activity {
 		this.fullScreenOverlay = (View) findViewById(R.id.pollViewLayout);
 		this.pollView = (View) findViewById(R.id.pollView);
 		this.pollImageView = (ImageView) findViewById(R.id.pollImageView);
-		this.virtualAmountImageView = (ImageView) findViewById(R.id.virtualAmountImageView);
-		this.virtualAmountTextView = (TextView) findViewById(R.id.virtualAmountTextView);
-		this.virtualAmountRewardTextView = (TextView) findViewById(R.id.virtualAmountRewardTextView);
+        if(!myPoll.getType().equals("I")) {
+            this.offerLayout = (View) findViewById(R.id.offerLayout);
+            this.virtualAmountImageView = (ImageView) findViewById(R.id.virtualAmountImageView);
+            this.virtualAmountTextView = (TextView) findViewById(R.id.virtualAmountTextView);
+            this.virtualAmountRewardTextView = (TextView) findViewById(R.id.virtualAmountRewardTextView);
+        }else {
+            this.offerLayout = (View) findViewById(R.id.offerLayout2);
+            this.virtualAmountImageView = (ImageView) findViewById(R.id.virtualAmountImageView2);
+            this.virtualAmountTextView = (TextView) findViewById(R.id.virtualAmountTextView2);
+            this.virtualAmountRewardTextView = (TextView) findViewById(R.id.virtualAmountRewardTextView2);
+        }
 		this.questionTextView = (TextView) findViewById(R.id.questionTextView);
 		this.mcButtonsLayout = (View) findViewById(R.id.mcButtonsLayout);
 		this.mcButton1 = (ImageTextButton) findViewById(R.id.mcButton1);
@@ -137,6 +188,7 @@ public class PJPollViewActivity extends Activity {
 		this.mcButton4 = (ImageTextButton) findViewById(R.id.mcButton4);
 		ImageTextButton[] mcButtons = { mcButton1, mcButton2, mcButton3,
 				mcButton4 };
+
 		this.textResponseLayout = (View) findViewById(R.id.textResponseLayout);
 		this.responseEditText = (EditText) findViewById(R.id.responseEditText);
 		this.submitButton = (ImageTextButton) findViewById(R.id.submitButton);
@@ -146,15 +198,53 @@ public class PJPollViewActivity extends Activity {
 		this.borderImageOverlay = (ImageView) findViewById(R.id.borderImageOverlay);
 		this.rewardImageView = (ImageView) findViewById(R.id.rewardImageView);
 		this.rewardAmountTextView = (TextView) findViewById(R.id.rewardAmountTextView);
-		this.offerLayout = (View) findViewById(R.id.offerLayout);
+
 		this.userRespondedLayout = (View) findViewById(R.id.userRespondedLayout);
 		this.responseRewardsLayout = (View) findViewById(R.id.responseRewardsLayout);
 		this.userInteractionLayout = (View) findViewById(R.id.userInteractionLayout);
 		this.pollImageLayout = (View) findViewById(R.id.pollImageLayout);
 
+        this.imagePollLayout = (View) findViewById(R.id.imagePollLayout);
+        this.imagePollMain = (ImageTextButton) findViewById(R.id.imagePollMainImage);
+        this.imagePoll1 = (ImageTextButton) findViewById(R.id.imagePoll1);
+        this.imagePoll2 = (ImageTextButton) findViewById(R.id.imagePoll2);
+        this.imagePoll3 = (ImageTextButton) findViewById(R.id.imagePoll3);
+        this.imagePoll4 = (ImageTextButton) findViewById(R.id.imagePoll4);
+
+        OnClickListener changeImageListener = new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                changeImagePoll((ImageTextButton) v);
+            }
+
+        };
+        ImageTextButton[] imagePollImages = {this.imagePoll1,this.imagePoll2,this.imagePoll3,this.imagePoll4};
+        for(ImageTextButton currentImage: imagePollImages) {
+            currentImage.setOnClickListener(changeImageListener);
+        }
+        this.imagePollConfirm = (Button) findViewById(R.id.imagePollConfirm);
+
+        OnClickListener imageClickListener= new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clickImagePoll((ImageTextButton) v);
+            }
+        };
+        imagePollMain.setOnClickListener(imageClickListener);
+
+        OnClickListener confirmImageListener= new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                userResponded(imagePollMain);
+            }
+        };
+        this.imagePollConfirm.setOnClickListener(confirmImageListener);
+
+
 		int orientation = this.getResources().getConfiguration().orientation;
 		PJScreenConfiguration screenConfig = new PJScreenConfiguration(this,
 				orientation);
+
 		int innerWidth = (int) screenConfig.innerWidth;
 		int innerHeight = (int) screenConfig.innerHeight;
 		int borderWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
@@ -259,6 +349,10 @@ public class PJPollViewActivity extends Activity {
 		this.setRewardImage();
 		this.setCloseButtonImage();
 
+        if (myPoll.getType().equals("I")) {
+            this.setImagePoll();
+        }
+
 		this.updatePollViewState(this.userResponded);
 
 		if (orientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -291,12 +385,19 @@ public class PJPollViewActivity extends Activity {
 					}
 					mcButtonsLayout.setVisibility(View.VISIBLE);
 					textResponseLayout.setVisibility(View.INVISIBLE);
+                    imagePollLayout.setVisibility(View.INVISIBLE);
 				} else if (myPoll.type.equals("T")) {
 					mcButtonsLayout.setVisibility(View.INVISIBLE);
-					textResponseLayout.setVisibility(View.VISIBLE);
-				} else {
+                    imagePollLayout.setVisibility(View.INVISIBLE);
+                    textResponseLayout.setVisibility(View.VISIBLE);
+				} else if (myPoll.type.equals("I")) {
+                    mcButtonsLayout.setVisibility(View.INVISIBLE);
+                    imagePollLayout.setVisibility(View.VISIBLE);
+
+                } else {
 					mcButtonsLayout.setVisibility(View.INVISIBLE);
 					textResponseLayout.setVisibility(View.INVISIBLE);
+                    imagePollLayout.setVisibility(View.INVISIBLE);
 				}
 			} catch (NullPointerException e) {
 				e.printStackTrace();
@@ -312,6 +413,7 @@ public class PJPollViewActivity extends Activity {
 			mcButtonsLayout.setVisibility(View.INVISIBLE);
 			textResponseLayout.setVisibility(View.INVISIBLE);
 			offerLayout.setVisibility(View.INVISIBLE);
+            imagePollLayout.setVisibility(View.INVISIBLE);
 			this.questionTextView.setText(myPoll.customMessage);
 			closeButton.setVisibility(View.INVISIBLE);
 			userRespondedLayout.setVisibility(View.VISIBLE);
@@ -356,6 +458,7 @@ public class PJPollViewActivity extends Activity {
 		view.setLayoutParams(parameters);
 	}
 
+
 	void setDrawableForView(View view, Drawable drawable) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
 			setBackground(view, drawable);
@@ -394,14 +497,16 @@ public class PJPollViewActivity extends Activity {
 		if (myPoll.app.closeButtonLocation == PJCloseButtonLocation.TopLeft) {
 			this.adjustLayoutMargins(this.closeButton, closeButtonOffsetX
 					+ margin, closeButtonOffsetY + margin, margin, 0);
-			RelativeLayout.LayoutParams parameters = (RelativeLayout.LayoutParams) this.offerLayout
-					.getLayoutParams();
-			parameters.addRule(RelativeLayout.RIGHT_OF, R.id.pollImageView);
-			this.offerLayout.setLayoutParams(parameters);
+            if(!myPoll.getType().equals("I")) {
+                RelativeLayout.LayoutParams parameters = (RelativeLayout.LayoutParams) this.offerLayout
+                        .getLayoutParams();
+                parameters.addRule(RelativeLayout.RIGHT_OF, R.id.pollImageView);
+                this.offerLayout.setLayoutParams(parameters);
+            }
 		} else {
 			this.adjustLayoutMargins(this.closeButton, margin,
 					closeButtonOffsetY + margin, margin + closeButtonOffsetX, 0);
-			RelativeLayout.LayoutParams parameters = (RelativeLayout.LayoutParams) this.closeButton
+            RelativeLayout.LayoutParams parameters = (RelativeLayout.LayoutParams) this.closeButton
 					.getLayoutParams();
 			parameters.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
 			this.closeButton.setLayoutParams(parameters);
@@ -410,6 +515,12 @@ public class PJPollViewActivity extends Activity {
 		// poll image
 		length = screenConfig.heightWithPercentage(21.88);
 		this.adjustLayoutWidth(this.pollImageView, length);
+
+        //image poll
+        if(myPoll.getType().equals("I")) {
+            setImagePollPortraitLayout(screenConfig);
+        }
+
 
 		// reward offer texts
 		this.adjustLayoutMargins(this.virtualAmountRewardTextView,
@@ -520,19 +631,19 @@ public class PJPollViewActivity extends Activity {
 		this.adjustLayoutHeight(topSpacer, height);
 
 		// left spacer
-		int leftSapcerWidth = screenConfig.heightWithPercentage(5);
+		int leftSpacerWidth = screenConfig.heightWithPercentage(5);
 		View leftSpacer = (View) findViewById(R.id.leftSpacer);
-		this.adjustLayoutWidth(leftSpacer, leftSapcerWidth);
+		this.adjustLayoutWidth(leftSpacer, leftSpacerWidth);
 
 		// inner spacer
-		int innerSapcerWidth = screenConfig.heightWithPercentage(3.333);
+		int innerSpacerWidth = screenConfig.heightWithPercentage(3.333);
 		View innerSpacer = (View) findViewById(R.id.innerSpacer);
-		this.adjustLayoutWidth(innerSpacer, innerSapcerWidth);
+		this.adjustLayoutWidth(innerSpacer, innerSpacerWidth);
 
 		// right spacer
-		int rightSapcerWidth = screenConfig.heightWithPercentage(3.333);
+		int rightSpacerWidth = screenConfig.heightWithPercentage(3.333);
 		View rightSpacer = (View) findViewById(R.id.rightSpacer);
-		this.adjustLayoutWidth(rightSpacer, rightSapcerWidth);
+		this.adjustLayoutWidth(rightSpacer, rightSpacerWidth);
 
 		// pollImageLayout
 		int pollImageWidth = screenConfig.heightWithPercentage(29.167);
@@ -542,18 +653,19 @@ public class PJPollViewActivity extends Activity {
 		length = screenConfig.heightWithPercentage(29.167);
 		this.adjustLayoutHeight(this.pollImageView, length);
 
-		// reward offer texts
-		int iconWidth = screenConfig.heightWithPercentage(6.66);
-		this.adjustLayoutMargins(this.offerLayout, 0, 0, 0,
-				screenConfig.heightWithPercentage(5 + (60.833 - 12.5) / 2));
-		int rewardTextHeight = screenConfig.heightWithPercentage(12.5 / 2);
-		this.adjustLayoutHeight(this.virtualAmountRewardTextView,
-				rewardTextHeight);
+        int iconWidth = screenConfig.heightWithPercentage(6.66);
+        // reward offer texts
+        this.adjustLayoutMargins(this.offerLayout, 0, 0, 0,
+                screenConfig.heightWithPercentage(5 + (60.833 - 12.5) / 2));
+        int rewardTextHeight = screenConfig.heightWithPercentage(12.5 / 2);
+        this.adjustLayoutHeight(this.virtualAmountRewardTextView,
+                rewardTextHeight);
 
-		// reward offer icon
-		this.adjustLayoutSize(this.virtualAmountImageView, iconWidth, iconWidth);
-		this.adjustLayoutMargins(this.virtualAmountImageView, 0, 0,
-				screenConfig.heightWithPercentage(1.5), 0);
+        // reward offer icon
+        this.adjustLayoutSize(this.virtualAmountImageView, iconWidth, iconWidth);
+        this.adjustLayoutMargins(this.virtualAmountImageView, 0, 0,
+                screenConfig.heightWithPercentage(1.5), 0);
+
 
 		// reward collected icon
 		this.adjustLayoutSize(this.rewardImageView, iconWidth, iconWidth);
@@ -605,6 +717,13 @@ public class PJPollViewActivity extends Activity {
 		verticalMargin = screenConfig.heightWithPercentage(2.5325);
 		this.adjustLayoutMargins(this.userInteractionLayout, 0, 0, 0,
 				verticalMargin);
+
+        //image poll
+        if(myPoll.getType().equals("I")) {
+            setImagePollLandscapeLayout(screenConfig);
+        }
+
+
 	}
 
 	void setBorderImageWithUrl(String borderImageUrl) {
@@ -619,16 +738,16 @@ public class PJPollViewActivity extends Activity {
 			public void onBitmapFailed(Drawable arg0) {
 			}
 
+            @Override
+            public void onPrepareLoad(Drawable arg0) {
+            }
+
 			@Override
 			public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
 				borderImageDrawable = new BitmapDrawable(getResources(), bitmap);
 				final int alpha = myPoll.app.backgroundAlpha * 255 / 100;
 				borderImageDrawable.setAlpha(alpha);
 				borderImageOverlay.setImageDrawable(borderImageDrawable);
-			}
-
-			@Override
-			public void onPrepareLoad(Drawable arg0) {
 			}
 
 		});
@@ -675,6 +794,61 @@ public class PJPollViewActivity extends Activity {
 			}
 		});
 	}
+
+    void setImagePoll() {
+        ImageTextButton[] imagePollImages = {this.imagePoll1, this.imagePoll2, this.imagePoll3, this.imagePoll4};
+        if (myPoll.choiceImageUrl.size()>0) {
+            this.imagePollMain.setText(myPoll.choices[0]);
+            Picasso.with(this).load(myPoll.choiceImageUrl.get(myPoll.choices[0])).into(new Target() {
+                @Override
+                public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
+                    imagePollMain.imageView.setImageBitmap(bitmap);
+                }
+                @Override
+                public void onBitmapFailed(Drawable arg0) {
+                }
+
+                @Override
+                public void onPrepareLoad(Drawable arg0) {
+                }
+            });
+
+            int index=0;
+            for(final ImageTextButton currentImage: imagePollImages) {
+                if (index<myPoll.choiceImageUrl.size()) {
+                    Picasso.with(this).load(myPoll.choiceImageUrl.get(myPoll.choices[index])).into(new Target() {
+                        @Override
+                        public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
+                            currentImage.imageView.setImageBitmap(bitmap);
+                        }
+                        @Override
+                        public void onBitmapFailed(Drawable arg0) {
+                        }
+
+                        @Override
+                        public void onPrepareLoad(Drawable arg0) {
+                        }
+
+                    });
+                    //Picasso.with(this).load(myPoll.choiceImageUrl.get(myPoll.choices[index])).into(imagePollImages[index]);
+                    currentImage.setText(myPoll.choices[index]);
+                    currentImage.setVisibility(View.VISIBLE);
+                    currentImage.setTextSize(0);
+                } else {
+                    currentImage.imageView.setImageDrawable(null);
+                    currentImage.setVisibility(View.INVISIBLE);
+                }
+                index++;
+            }
+
+        }
+        else {
+            this.imagePollMain.imageView.setImageDrawable(null);
+            for(ImageTextButton currentImage: imagePollImages) {
+                currentImage.imageView.setImageDrawable(null);
+            }
+        }
+    }
 
 	void setPollImage() {
 		if (myPoll.imageUrlSetForDisplay.pollImageUrl != null) {
@@ -724,8 +898,8 @@ public class PJPollViewActivity extends Activity {
 					inputMethodManager.showSoftInput(responseEditText, 0);
 					return;
 				} else {
-					myPoll.response = input;
 				}
+                myPoll.response = input;
 			} catch (NullPointerException e) {
 				e.printStackTrace();
 			}
@@ -736,8 +910,10 @@ public class PJPollViewActivity extends Activity {
 		closeButton.setVisibility(View.VISIBLE);
 		mcButtonsLayout.setVisibility(View.INVISIBLE);
 		textResponseLayout.setVisibility(View.INVISIBLE);
+        imagePollLayout.setVisibility(View.INVISIBLE);
 		this.delegate.PJPollViewDidAnswered(this, myPoll);
 	}
+
 
 	void userSkipped(View view) {
 		if (userResponded) {
@@ -748,9 +924,150 @@ public class PJPollViewActivity extends Activity {
 	}
 
 	void userConfirmed(View button) {
-		this.delegate.PJPollViewCloseAfterReponse(this, myPoll);
+		this.delegate.PJPollViewCloseAfterResponse(this, myPoll);
 		return;
 	}
+
+    void changeImagePoll(ImageTextButton view) {
+        if (this.imagePollMain.button.getText().equals(view.getText())) {
+            this.imagePollConfirm.setVisibility(View.VISIBLE);
+        } else {
+            this.imagePollConfirm.setVisibility(View.INVISIBLE);
+        }
+        Picasso.with(this).load( myPoll.choiceImageUrl.get(view.getText().toString()) ).into(new Target() {
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
+                imagePollMain.imageView.setImageBitmap(bitmap);
+            }
+            @Override
+            public void onBitmapFailed(Drawable arg0) {
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable arg0) {
+            }
+
+        });
+        this.imagePollMain.setText(view.getText().toString());
+    }
+    void clickImagePoll(ImageTextButton view) {
+            this.imagePollConfirm.setVisibility(View.VISIBLE);
+    }
+
+    void setImagePollPortraitLayout (PJScreenConfiguration screenConfig) {
+        double verticalMargin = screenConfig.getInnerHeight() - screenConfig.heightWithPercentage(35) - screenConfig.widthWithPercentage(80);
+        verticalMargin /=2;
+        LinearLayout.LayoutParams p = (LinearLayout.LayoutParams) this.userInteractionLayout.getLayoutParams();
+        p.weight=76.87f;
+        this.userInteractionLayout.setLayoutParams(p);
+        this.pollImageLayout.setVisibility(View.GONE);
+        adjustLayoutMargins(this.offerLayout,screenConfig.widthWithPercentage(40),screenConfig.heightWithPercentage(24),0,0);
+        int length = screenConfig.widthWithPercentage(60);
+        this.adjustLayoutMargins(this.imagePollMain, 0, 0, 0, 0);
+        this.adjustLayoutWidth(this.imagePollMain, length);
+        this.adjustLayoutHeight(this.imagePollMain, length);
+        this.adjustLayoutHeight(this.imagePollMain.button, 0);
+        this.adjustLayoutWidth(this.imagePollMain.button, 0);
+        this.adjustLayoutMargins(this.imagePollMain.imageView, 0, 0, 0, 0);
+        this.adjustLayoutWidth(this.imagePollMain.imageView, length);
+        this.adjustLayoutHeight(this.imagePollMain.imageView, length);
+
+        this.adjustLayoutMargins(findViewById(R.id.imagePollMainLayout), 0, screenConfig.heightWithPercentage(8.25), 0, (int)verticalMargin);
+        this.adjustLayoutMargins(findViewById(R.id.imagePollOtherLayout), 0, 0, 0,0);
+        length = screenConfig.widthWithPercentage(20);
+        ImageTextButton[] imagePollImages = {this.imagePoll1, this.imagePoll2, this.imagePoll3, this.imagePoll4};
+        int index = 0;
+        double imagePollImagesMargin = (screenConfig.widthWithPercentage(100)
+                -(myPoll.choiceImageUrl.size()*length)
+                -(2*screenConfig.widthWithPercentage(1.6667)) );
+        imagePollImagesMargin /= (myPoll.choiceImageUrl.size()+1);
+        for (ImageTextButton currentImage: imagePollImages) {
+            if (index != 0) {
+                this.adjustLayoutMargins(currentImage,(int)imagePollImagesMargin,0,0,0);
+            }else {
+                this.adjustLayoutMargins(currentImage,(int)imagePollImagesMargin+screenConfig.widthWithPercentage(1.6667),0,0,0);
+            }
+            this.adjustLayoutWidth(currentImage,length);
+            this.adjustLayoutHeight(currentImage,length);
+            this.adjustLayoutMargins(currentImage.button,0,0,0,0);
+            this.adjustLayoutWidth(currentImage.button,0);
+            this.adjustLayoutHeight(currentImage.button,0);
+            this.adjustLayoutMargins(currentImage.imageView,0,0,0,0);
+            this.adjustLayoutWidth(currentImage.imageView,length);
+            this.adjustLayoutHeight(currentImage.imageView,length);
+            index++;
+        }
+        this.imagePollConfirm.setBackgroundColor(Color.TRANSPARENT);
+        this.imagePollConfirm.setTextColor(myPoll.app.getButtonFontColor());
+        GradientDrawable background = (GradientDrawable) getResources()
+                .getDrawable(R.drawable.poll_view_button);
+        background.setColor(myPoll.getButtonColor());
+        setDrawableForView(this.imagePollConfirm, background);
+    }
+
+    void setImagePollLandscapeLayout (PJScreenConfiguration screenConfig) {
+        double horizontalMargin = screenConfig.getInnerWidth();
+        this.adjustLayoutMargins(questionTextView, screenConfig.widthWithPercentage(27.125),0,screenConfig.widthWithPercentage(6),0);
+        findViewById(R.id.rightSpacer).setVisibility(View.GONE);
+        findViewById(R.id.leftSpacer).setVisibility(View.GONE);
+        findViewById(R.id.innerSpacer).setVisibility(View.GONE);
+        int length = screenConfig.heightWithPercentage(55);
+        horizontalMargin -= (2*length);
+        horizontalMargin /= 3;
+        this.adjustLayoutMargins(this.imagePollMain, 0, 0, 0, 0);
+        this.adjustLayoutWidth(this.imagePollMain, length);
+        this.adjustLayoutHeight(this.imagePollMain, length);
+        this.adjustLayoutHeight(this.imagePollMain.button, 0);
+        this.adjustLayoutWidth(this.imagePollMain.button, 0);
+        this.adjustLayoutMargins(this.imagePollMain.imageView, 0, 0, 0, 0);
+        this.adjustLayoutWidth(this.imagePollMain.imageView, length);
+        this.adjustLayoutHeight(this.imagePollMain.imageView, length);
+
+
+/*        this.adjustLayoutMargins(findViewById(R.id.imagePollMainLayout), 0, screenConfig.heightWithPercentage(3),
+                screenConfig.widthWithPercentage(3) , screenConfig.heightWithPercentage(3));*/
+        this.adjustLayoutMargins(findViewById(R.id.imagePollMainLayout), 0, screenConfig.heightWithPercentage(3),
+                (int)horizontalMargin , 0);
+
+        length = screenConfig.heightWithPercentage(26);
+        ImageTextButton[] imagePollImages = {this.imagePoll1, this.imagePoll2, this.imagePoll3, this.imagePoll4};
+        int imagePollTopMargin, imagePollRightMargin;
+        for (int i=0; i<imagePollImages.length; i++) {
+            ImageTextButton currentImage = imagePollImages[i];
+            if (i < 2 ) {
+                imagePollRightMargin = screenConfig.heightWithPercentage(3);
+            } else {
+                imagePollRightMargin = 0;
+            }
+            if (i%2 == 0) {
+                imagePollTopMargin = 0;
+            } else {
+                imagePollTopMargin = screenConfig.heightWithPercentage(3);
+            }
+            this.adjustLayoutMargins(currentImage, 0, imagePollTopMargin, imagePollRightMargin, 0);
+
+            this.adjustLayoutWidth(currentImage, length);
+            this.adjustLayoutHeight(currentImage, length);
+            this.adjustLayoutMargins(currentImage.button, 0, 0, 0, 0);
+            this.adjustLayoutWidth(currentImage.button,0);
+            this.adjustLayoutHeight(currentImage.button, 0);
+            this.adjustLayoutMargins(currentImage.imageView, 0, 0, 0, 0);
+            this.adjustLayoutWidth(currentImage.imageView, length);
+            this.adjustLayoutHeight(currentImage.imageView, length);
+        }
+//        adjustLayoutMargins(findViewById(R.id.imagePollOtherLayout),screenConfig.widthWithPercentage(3), screenConfig.heightWithPercentage(3),0,0);
+        adjustLayoutMargins(findViewById(R.id.imagePollOtherLayout), 0,
+                screenConfig.heightWithPercentage(3),0,0);
+
+        this.imagePollConfirm.setBackgroundColor(Color.TRANSPARENT);
+        this.imagePollConfirm.setTextColor(myPoll.app.getButtonFontColor());
+        GradientDrawable background = (GradientDrawable) getResources()
+                .getDrawable(R.drawable.poll_view_button);
+        background.setColor(myPoll.getButtonColor());
+        setDrawableForView(this.imagePollConfirm, background);
+        this.pollImageLayout.setVisibility(View.GONE);
+        adjustLayoutMargins(this.offerLayout,screenConfig.widthWithPercentage(6),screenConfig.heightWithPercentage(10),0,0);
+    }
 
 	public void showActionAfterResponse() {
 		this.updatePollViewState(userResponded);

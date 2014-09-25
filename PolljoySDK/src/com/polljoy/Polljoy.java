@@ -48,8 +48,8 @@ public class Polljoy {
 	};
 
 	public final static String PJ_SDK_NAME = "Polljoy";
-	public final static String PJ_API_SANDBOX_endpoint = "http://api.sandbox.polljoy.com/poll/";
-	public final static String PJ_API_endpoint = "http://api.polljoy.com/poll/";
+	public final static String PJ_API_SANDBOX_endpoint = "https://apisandbox.polljoy.com/2.0/poll/";
+	public final static String PJ_API_endpoint = "http://api.polljoy.com/2.0/poll/";
 	static boolean _isRegisteringSession = false;
 	static boolean _needsAutoShow = false;
 
@@ -96,7 +96,7 @@ public class Polljoy {
 			String response = poll.response;
 			int pollToken = poll.pollToken;
 			Polljoy.responsePoll(pollToken, response);
-			if (poll.type.equals("M")) {
+			if (poll.type.equals("M") || poll.type.equals("I")) {
 				String url = poll.choiceUrl.get(response);
 				try {
 					Uri uri = Uri.parse(url);
@@ -149,25 +149,16 @@ public class Polljoy {
 		}
 
 		@Override
-		public void PJPollViewCloseAfterReponse(PJPollViewActivity pollView,
-				PJPoll poll) {
+		public void PJPollViewCloseAfterResponse(PJPollViewActivity pollView,
+                                                 PJPoll poll) {
 			PJPoll matchedPoll = getPollWithToken(poll.pollToken);
 			_polls.remove(matchedPoll);
 			_currentShowingPollToken = Integer.MIN_VALUE;
 			if (_polls.size() > 0) {
-				if (poll.virtualAmount > 0) {
-					if (_delegate != null) {
+				if (_delegate != null) {
 						_delegate.PJPollDidResponded(poll);
 					}
-				}
-				if (_delegate != null) {
-					_delegate.PJPollWillDismiss(poll);
-				}
 				pollView.finish();
-				if (_delegate != null) {
-					_delegate.PJPollDidDismiss(poll);
-				}
-
 				showPoll();
 			} else {
 				if (_delegate != null) {
@@ -199,10 +190,14 @@ public class Polljoy {
 	}
 
 	public static void startSession(Context context, final String appId) {
-		startSession(context, appId, true);
+		startSession(context, appId, null, true);
 	}
 
-	public static void startSession(Context context, final String appId,
+    public static void startSession(Context context, final String appId, final String deviceId) {
+        startSession(context, appId, deviceId, true);
+    }
+
+    public static void startSession(Context context, final String appId, final String deviceId,
 			boolean newSession) {
 		if (appId == null) {
 			Log.e(TAG, "missing appId");
@@ -216,7 +211,12 @@ public class Polljoy {
 		Point screenSize = PJScreenConfiguration.getRealSizeForDisplay(display);
 		_screenType = PJScreenType.screenTypeForScreenSize(screenSize);
 		_sessionId = null;
-		_deviceId = PolljoyCore.getDeviceId(_appContext);
+        if (deviceId == null) {
+            _deviceId = PolljoyCore.getDeviceId(_appContext);
+        }
+        else {
+            _deviceId = deviceId;
+        }
 		_deviceModel = PolljoyCore.getDeviceModel();
 		_devicePlatform = "android";
 		_deviceOS = Build.VERSION.RELEASE;
@@ -341,7 +341,7 @@ public class Polljoy {
 			} else if (_appId != null) {
 				Log.i(TAG,
 						"user already set appId. startSession onbehalf. delay poll request for 2 sec");
-				startSession(_appContext, _appId, false);
+				startSession(_appContext, _appId, _deviceId, false);
 				if (schedulePollRequestHandler != null) {
 					schedulePollRequestHandler.removeCallbacksAndMessages(null);
 				}
@@ -492,6 +492,9 @@ public class Polljoy {
 							+ String.valueOf(poll.pollId) + ") imageStatus = "
 							+ poll.imageStatus);
 			if (PJPollImageStatus.PJPollAllImageReady.getStatusCode() == poll.imageStatus) {
+                if (poll.type.equals("I") && poll.imagePollStatus < poll.choices.length) {
+                    return;
+                }
 				poll.isReadyToShow = true;
 				Log.i(TAG, "Poll(" + String.valueOf(poll.pollId)
 						+ ") isReadyToShow");
@@ -683,6 +686,26 @@ public class Polljoy {
 						checkPollImagesStatus(poll);
 					}
 				});
+
+        if (poll.type.equals("I")) {
+//              String imagePollUrl;
+             // poll.imagePollStatus += 4-poll.choices.length;
+ //             for (int i=0; i<poll.choices.length; i++) {
+//              imagePollUrl = poll.choices[i];
+            for (String imagePollChoice: poll.choices) {
+                String imagePollUrl = poll.choiceImageUrl.get(imagePollChoice);
+                Log.i(TAG, "image poll url is: " + imagePollUrl);
+              downloadPollImage("imagePollImages", imagePollUrl, null,
+                        new PollImageDownloadingCompletionHandler() {
+                            @Override
+                            public void imageDownloadedForUrl(String downloadedUrl) {
+                                //poll.imageUrlSetForDisplay.buttonImageP = downloadedUrl;
+                                poll.imagePollStatus++;
+                                checkPollImagesStatus(poll);
+                            }
+                        });
+              }
+        }
 	}
 
 	public interface PollImageDownloadingCompletionHandler {

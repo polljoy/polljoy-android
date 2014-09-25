@@ -145,6 +145,14 @@ public class PJScreenConfiguration {
 		return (int) this.dimensionWithPercentage(this.innerHeight, percentage);
 	}
 
+    double getInnerWidth () {
+        return this.innerWidth;
+    }
+
+    double getInnerHeight () {
+        return this.innerHeight;
+    }
+
 	static Point getRealSizeForDisplay(Display display) {
 		int sdkCode = Build.VERSION.SDK_INT;
 		if (sdkCode < Build.VERSION_CODES.HONEYCOMB_MR2) {

@@ -1,7 +1,7 @@
 package com.polljoy.internal;
 
 public class Log {
-	public static final boolean loggingEnabled = false;
+	public static final boolean loggingEnabled = true;
 
 	public static void v(String tag, String msg) {
 		if (loggingEnabled) {

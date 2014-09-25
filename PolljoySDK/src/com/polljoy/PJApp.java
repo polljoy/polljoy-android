@@ -38,6 +38,7 @@ public class PJApp implements Serializable {
 	PJCloseButtonLocation closeButtonLocation = PJCloseButtonLocation.TopRight;
 	int closeButtonOffsetX = 0;
 	int closeButtonOffsetY = 0;
+    boolean closeButtonEasyClose = false;
 	String fontName = null;
 	int imageCornerRadius = 0;
 	Date modifiedDate = null;
@@ -118,6 +119,7 @@ public class PJApp implements Serializable {
 				.locationForCode(locationCode);
 		this.closeButtonOffsetX = jsonObject.optInt("closeButtonOffsetX");
 		this.closeButtonOffsetY = jsonObject.optInt("closeButtonOffsetY");
+        this.closeButtonEasyClose = jsonObject.optBoolean("closeButtonEasyClose");
 		this.fontName = jsonObject.optString("fontName");
 		String dateString = jsonObject.optString("modified");
 		this.modifiedDate = PJDateHelper.parseDateString(dateString);
@@ -298,6 +300,12 @@ public class PJApp implements Serializable {
 	public void setCloseButtonOffsetY(int closeButtonOffsetY) {
 		this.closeButtonOffsetY = closeButtonOffsetY;
 	}
+
+    public boolean getCloseButtonEasyClose () {return closeButtonEasyClose;}
+
+    public void setCloseButtonEasyClose(boolean closeButtonEasyClose) {
+        this.closeButtonEasyClose = closeButtonEasyClose;
+    }
 
 	public String getFontName() {
 		return fontName;
