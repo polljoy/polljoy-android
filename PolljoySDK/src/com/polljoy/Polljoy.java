@@ -286,12 +286,12 @@ public class Polljoy {
 	}
 
 	public static void getPoll(PolljoyDelegate delegate) {
-		getPoll(null, 0, 0, 0, PJUserType.PJNonPayUser, delegate);
+		getPoll(null, _level, _session, _timeSinceInstall, PJUserType.PJNonPayUser, delegate);
 	}
 
 	public static void getPoll(String appVersion, int level,
 			PJUserType userType, PolljoyDelegate delegate) {
-		getPoll(appVersion, level, 0, 0, userType, delegate);
+		getPoll(appVersion, level, _session, _timeSinceInstall, userType, delegate);
 	}
 
 	public static void getPoll(String appVersion, int level, int session,
