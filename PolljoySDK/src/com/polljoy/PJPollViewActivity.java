@@ -326,7 +326,7 @@ public class PJPollViewActivity extends Activity {
 
 		this.closeButton.setOnClickListener(closeButtonListener);
 		PorterDuffColorFilter colorFilter = new PorterDuffColorFilter(
-				myPoll.fontColor, PorterDuff.Mode.SRC_ATOP);
+				myPoll.app.fontColor, PorterDuff.Mode.SRC_ATOP);
 		this.closeButton.setColorFilter(colorFilter);
 
 		// reward amounts
@@ -334,9 +334,9 @@ public class PJPollViewActivity extends Activity {
 				.setText(String.valueOf(myPoll.virtualAmount));
 		this.rewardAmountTextView.setText(String.valueOf(myPoll.virtualAmount));
 		// reward text colors
-		this.virtualAmountTextView.setTextColor(myPoll.fontColor);
-		this.rewardAmountTextView.setTextColor(myPoll.fontColor);
-		this.virtualAmountRewardTextView.setTextColor(myPoll.fontColor);
+		this.virtualAmountTextView.setTextColor(myPoll.app.fontColor);
+		this.rewardAmountTextView.setTextColor(myPoll.app.fontColor);
+		this.virtualAmountRewardTextView.setTextColor(myPoll.app.fontColor);
 		// reward text sizes
 		this.virtualAmountTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
 				screenConfig.rewardFontSize);
@@ -486,8 +486,8 @@ public class PJPollViewActivity extends Activity {
 		// setup close button
 		int designMargin = screenConfig.heightWithPercentage(1.875);
 		int paddingForEasyTouch = 20;
-		int length = screenConfig.heightWithPercentage(3.75)
-				+ paddingForEasyTouch * 2;
+		int length = screenConfig.heightWithPercentage(3.75) * 2
+				+ paddingForEasyTouch * 2; 
 		this.adjustLayoutSize(this.closeButton, length, length);
 		int margin = designMargin - paddingForEasyTouch;
 		this.closeButton.setPadding(paddingForEasyTouch, paddingForEasyTouch,
@@ -531,7 +531,7 @@ public class PJPollViewActivity extends Activity {
 		this.adjustLayoutSize(this.virtualAmountTextView, width, height);
 
 		// reward offer icon
-		length = screenConfig.heightWithPercentage(3.13);
+		length = screenConfig.heightWithPercentage(6.26);
 		this.adjustLayoutSize(this.virtualAmountImageView, length, length);
 		this.adjustLayoutMargins(this.virtualAmountImageView, 0, 0,
 				screenConfig.widthWithPercentage(1.5), 0);
@@ -546,7 +546,7 @@ public class PJPollViewActivity extends Activity {
 		this.adjustLayoutMargins(this.questionTextView, horizontalMargin,
 				verticalMargin, horizontalMargin, verticalMargin);
 
-		// multi-choice buttons
+		// multiple-choice buttons
 		// submit button
 		int horizontalPadding = screenConfig.widthWithPercentage(88.89 - 86.67)
 				+ shadowOffset;
@@ -598,7 +598,7 @@ public class PJPollViewActivity extends Activity {
 		// setup close button
 		int designMargin = screenConfig.heightWithPercentage(2.5);
 		int paddingForEasyTouch = 20;
-		int length = screenConfig.heightWithPercentage(5) + paddingForEasyTouch
+		int length = screenConfig.heightWithPercentage(5) * 2 + paddingForEasyTouch
 				* 2;
 		this.adjustLayoutSize(this.closeButton, length, length);
 		int margin = designMargin - paddingForEasyTouch;
@@ -653,7 +653,7 @@ public class PJPollViewActivity extends Activity {
 		length = screenConfig.heightWithPercentage(29.167);
 		this.adjustLayoutHeight(this.pollImageView, length);
 
-        int iconWidth = screenConfig.heightWithPercentage(6.66);
+        int iconWidth = screenConfig.heightWithPercentage(13.32);
         // reward offer texts
         this.adjustLayoutMargins(this.offerLayout, 0, 0, 0,
                 screenConfig.heightWithPercentage(5 + (60.833 - 12.5) / 2));
@@ -681,7 +681,7 @@ public class PJPollViewActivity extends Activity {
 		this.questionTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
 				(float) (screenConfig.fontSize * 1.2));
 
-		// multi-choice buttons
+		// multiple-choice buttons
 		// submit button
 		int horizontalPadding = screenConfig.widthWithPercentage(0.1 * 66.875)
 				- shadowOffset;

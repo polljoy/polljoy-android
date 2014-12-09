@@ -1,6 +1,7 @@
 package com.polljoy;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -48,8 +49,8 @@ public class Polljoy {
 	};
 
 	public final static String PJ_SDK_NAME = "Polljoy";
-	public final static String PJ_API_SANDBOX_endpoint = "https://apisandbox.polljoy.com/2.0/poll/";
-	public final static String PJ_API_endpoint = "http://api.polljoy.com/2.0/poll/";
+	public final static String PJ_API_SANDBOX_endpoint = "https://apisandbox.polljoy.com/2.1/poll/";
+	public final static String PJ_API_endpoint = "http://api.polljoy.com/2.1/poll/";
 	static boolean _isRegisteringSession = false;
 	static boolean _needsAutoShow = false;
 
@@ -95,35 +96,65 @@ public class Polljoy {
 				PJPoll poll) {
 			String response = poll.response;
 			int pollToken = poll.pollToken;
-			Polljoy.responsePoll(pollToken, response);
-			if (poll.type.equals("M") || poll.type.equals("I")) {
-				String url = poll.choiceUrl.get(response);
-				try {
-					Uri uri = Uri.parse(url);
-					Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-					pollView.startActivity(intent);
-				} catch (android.content.ActivityNotFoundException e) {
-					Log.d(TAG, "Url: " + url);
-					Log.d(TAG,
-							"ActivityNotFoundException: "
-									+ e.getLocalizedMessage());
-					e.printStackTrace();
-				} catch (NullPointerException e) {
-					e.printStackTrace();
-				}
-			}
+			Polljoy.responsePoll(pollToken, response);	
 
 			if (poll.virtualAmount > 0) {
 				pollView.showActionAfterResponse();
 			} else {
 				PJPoll matchedPoll = getPollWithToken(pollToken);
 				_polls.remove(matchedPoll);
+			
+				if (poll.childPolls != null) {
+			        PJPoll childPoll = null;
+			        
+			        Hashtable<String, Object> childPolls = poll.childPolls;
+			        if (childPolls.get(response) != null) {
+			            childPoll = (PJPoll) childPolls.get(response);
+			        }
+			        else  if (childPolls.get("polljoyPollAnyAnswer") != null) {
+			            childPoll = (PJPoll) childPolls.get("polljoyPollAnyAnswer");
+			        }
+			        
+			        if (childPoll != null) {
+			        	_polls.add(0, childPoll);
+			        }
+			    }
+
 				if (_polls.size() > 0) {
+					if (_delegate != null) {
+						_delegate.PJPollDidResponded(poll);
+					}
+					if (_delegate != null) {
+						_delegate.PJPollWillDismiss(poll);
+					}
 					pollView.finish();
+					if (_delegate != null) {
+						_delegate.PJPollWillDismiss(poll);
+					}
+					
 					_currentShowingPollToken = Integer.MIN_VALUE;
 					showPoll();
 				} else {
 					pollView.showActionAfterResponse();
+				}
+			}
+			
+			if (poll.type.equals("M") || poll.type.equals("I")) {
+				String url = poll.choiceUrl.get(response);
+				if (url != null) {
+					try {
+						Uri uri = Uri.parse(url);
+						Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+						pollView.startActivity(intent);
+					} catch (android.content.ActivityNotFoundException e) {
+						Log.d(TAG, "Url: " + url);
+						Log.d(TAG,
+								"ActivityNotFoundException: "
+										+ e.getLocalizedMessage());
+						e.printStackTrace();
+					} catch (NullPointerException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 
@@ -153,12 +184,36 @@ public class Polljoy {
                                                  PJPoll poll) {
 			PJPoll matchedPoll = getPollWithToken(poll.pollToken);
 			_polls.remove(matchedPoll);
+			
+			String response = poll.response;
+			if (poll.childPolls != null) {
+		        PJPoll childPoll = null;
+		        
+		        Hashtable<String, Object> childPolls = poll.childPolls;
+		        if (childPolls.get(response) != null) {
+		            childPoll = (PJPoll) childPolls.get(response);
+		        }
+		        else  if (childPolls.get("polljoyPollAnyAnswer") != null) {
+		            childPoll = (PJPoll) childPolls.get("polljoyPollAnyAnswer");
+		        }
+		        
+		        if (childPoll != null) {
+		        	_polls.add(0, childPoll);
+		        }
+		    }
+			
 			_currentShowingPollToken = Integer.MIN_VALUE;
 			if (_polls.size() > 0) {
 				if (_delegate != null) {
-						_delegate.PJPollDidResponded(poll);
-					}
+					_delegate.PJPollDidResponded(poll);
+				}
+				if (_delegate != null) {
+					_delegate.PJPollWillDismiss(poll);
+				}
 				pollView.finish();
+				if (_delegate != null) {
+					_delegate.PJPollWillDismiss(poll);
+				}
 				showPoll();
 			} else {
 				if (_delegate != null) {
@@ -227,7 +282,7 @@ public class Polljoy {
 		_session = newSession ? PolljoyCore.getNewSession(_appContext)
 				: PolljoyCore.getCurrentSession(_appContext);
 		_timeSinceInstall = (int) PolljoyCore.getTimeSinceInstall(_appContext);
-		_startSessionTask = new PJStartSessionAsyncTask(_appId, _deviceId);
+		_startSessionTask = new PJStartSessionAsyncTask(_appId, _deviceId, _deviceModel, _devicePlatform + " " + _deviceOS);
 		_startSessionTask.taskListener = new PJAsyncTaskListener() {
 
 			@Override
@@ -413,7 +468,12 @@ public class Polljoy {
 						}
 						for (PJPoll poll : _polls) {
 							downloadPollImages(poll);
+							
+							if (poll.childPolls != null) {
+								downloadChildPollImages(poll.childPolls);
+							}
 						}
+						Log.d(TAG, "Polls:" + _polls.toString());
 					} else {
 						Log.e(TAG, Polljoy.PJ_SDK_NAME + ": Error - Status: "
 								+ String.valueOf(status) + " (" + message + ")");
@@ -508,11 +568,15 @@ public class Polljoy {
 			Log.d(TAG, "checkPollStatus");
 			if (_polls.size() < 1) {
 				return;
-			}
+			}		
 			boolean pollsAreReady = true;
 			for (PJPoll poll : _polls) {
 				if (!poll.isReadyToShow) {
 					pollsAreReady = false;
+					break;
+				}
+				else {
+					pollsAreReady = checkChildPollStatus(poll.childPolls);	
 				}
 			}
 			if (pollsAreReady) {
@@ -532,6 +596,28 @@ public class Polljoy {
 		return;
 	}
 
+	public static boolean checkChildPollStatus(Hashtable<String, Object> childPolls) {
+		boolean pollsAreReady = true;
+		Log.i(TAG,"Check Child Polls images");
+	    if (childPolls != null) {
+	    	for (String key : childPolls.keySet()) {
+			    PJPoll poll = (PJPoll) childPolls.get(key);
+	            
+	            if (!poll.isReadyToShow) {
+					pollsAreReady = false;
+					break;
+				}
+				else {
+					pollsAreReady = checkChildPollStatus(poll.childPolls);
+				}
+	            
+	            Log.i(TAG,"Child Polls are " + (pollsAreReady?"ready":"not ready") + " for pollId:" + Integer.toString(poll.pollId));
+	        }
+	    }
+	    
+	    return pollsAreReady;
+	}
+	
 	// ImageUrl handling
 
 	static boolean isUrlValid(String url) {
@@ -688,10 +774,6 @@ public class Polljoy {
 				});
 
         if (poll.type.equals("I")) {
-//              String imagePollUrl;
-             // poll.imagePollStatus += 4-poll.choices.length;
- //             for (int i=0; i<poll.choices.length; i++) {
-//              imagePollUrl = poll.choices[i];
             for (String imagePollChoice: poll.choices) {
                 String imagePollUrl = poll.choiceImageUrl.get(imagePollChoice);
                 Log.i(TAG, "image poll url is: " + imagePollUrl);
@@ -699,7 +781,6 @@ public class Polljoy {
                         new PollImageDownloadingCompletionHandler() {
                             @Override
                             public void imageDownloadedForUrl(String downloadedUrl) {
-                                //poll.imageUrlSetForDisplay.buttonImageP = downloadedUrl;
                                 poll.imagePollStatus++;
                                 checkPollImagesStatus(poll);
                             }
@@ -770,6 +851,16 @@ public class Polljoy {
 				completionHandler);
 	}
 
+	static void downloadChildPollImages(final Hashtable<String, Object> childPolls) {
+		for (String key : childPolls.keySet()) {
+		    PJPoll poll = (PJPoll) childPolls.get(key);
+		    downloadPollImages(poll);
+		    if (poll.childPolls != null) {
+		    	downloadChildPollImages(poll.childPolls);
+		    }
+		}
+	}
+	
 	public static void showPoll() {
 		if (_currentShowingPollToken != Integer.MIN_VALUE) {
 			return;

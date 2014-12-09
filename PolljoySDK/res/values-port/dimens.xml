@@ -3,8 +3,8 @@
 
     <dimen name="poll_view_width">270dp</dimen>
     <dimen name="poll_view_height">480dp</dimen>
-    <dimen name="close_button_width">20dp</dimen>
-    <dimen name="close_button_height">20dp</dimen>
+    <dimen name="close_button_width">40dp</dimen>
+    <dimen name="close_button_height">40dp</dimen>
     <dimen name="close_button_margin_top">5dp</dimen>
     <dimen name="close_button_margin_right">5dp</dimen>
     <dimen name="poll_image_margin_left">12dp</dimen>

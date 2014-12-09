@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.Map;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -51,7 +49,9 @@ public class PJPoll implements Serializable {
 	int backgroundColor;
 	@Deprecated
 	int borderColor;
+	@Deprecated
 	int buttonColor;
+	@Deprecated
 	int fontColor;
 	int maximumPollPerSession = 0;
 	int maximumPollPerDay = 0;
@@ -85,7 +85,11 @@ public class PJPoll implements Serializable {
 	int imageStatus;
     int imagePollStatus = 0;
 	PJPollImageUrlSet imageUrlSetForDisplay = new PJPollImageUrlSet();
-
+	Hashtable<String, Object> childPolls = null;
+	int searchDepth = 0;
+	
+	public final static String TAG = "PJPoll";
+	
 	public PJPoll(JSONObject jsonObject) {
 		this.appId = jsonObject.optString("appId");
 		this.pollId = jsonObject.optInt("pollId");
@@ -169,6 +173,12 @@ public class PJPoll implements Serializable {
 		if (parsedApp.appId != null) {
 			this.app = parsedApp;
 		}
+		
+		this.searchDepth = jsonObject.optInt("searchDepth");
+		JSONObject childPollsJsonObject = jsonObject.optJSONObject("childPolls");
+		if (childPollsJsonObject != null) {
+			this.childPolls = this.getChildPollsMapFromJSONObject(childPollsJsonObject, parsedApp);
+		}
 	}
 
 	String[] convertJSONArrayToStringArray(JSONArray jsonArray) {
@@ -218,7 +228,7 @@ public class PJPoll implements Serializable {
         try {
             if (sourceJsonObject != null) {
                 result = new Hashtable<String, String>();
-                //@SuppressWarnings("unchecked")
+                @SuppressWarnings("unchecked")
                 Iterator<String> names = sourceJsonObject.keys();
                 while (names.hasNext()) {
                     String name = names.next();
@@ -233,6 +243,31 @@ public class PJPoll implements Serializable {
         return result;
     }
 
+    Hashtable<String, Object> getChildPollsMapFromJSONObject(
+    		JSONObject sourceJsonObject, PJApp app) {
+    	Hashtable<String, Object> result = null;
+    	try {
+            if (sourceJsonObject != null) {
+                result = new Hashtable<String, Object>();
+                @SuppressWarnings("unchecked")
+                Iterator<String> names = sourceJsonObject.keys();
+                while (names.hasNext()) {
+                    String name = names.next();
+                    JSONObject pollRequest = (JSONObject) sourceJsonObject.optJSONObject(name);
+                    JSONObject pollJsonObject = pollRequest
+							.optJSONObject("PollRequest");
+
+                    PJPoll poll = new PJPoll(pollJsonObject);
+                    result.put(name, poll);
+                }
+            } else {
+            }
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+    
 	public String getAppId() {
 		return appId;
 	}
@@ -470,19 +505,19 @@ public class PJPoll implements Serializable {
 	}
 
 	public int getButtonColor() {
-		return buttonColor;
+		return app.buttonColor;
 	}
 
 	public void setButtonColor(int buttonColor) {
-		this.buttonColor = buttonColor;
+		this.app.buttonColor = buttonColor;
 	}
 
 	public int getFontColor() {
-		return fontColor;
+		return app.fontColor;
 	}
 
 	public void setFontColor(int fontColor) {
-		this.fontColor = fontColor;
+		this.app.fontColor = fontColor;
 	}
 
 	public int getMaximumPollPerSession() {
@@ -730,5 +765,20 @@ public class PJPoll implements Serializable {
 	public void setImageStatus(int imageStatus) {
 		this.imageStatus = imageStatus;
 	}
+	
+	public int getSearchDepth() {
+		return searchDepth;
+	}
+	
+    public void setSearchDepth(int searchDepth) {
+        this.imagePollStatus = searchDepth;
+    }
+    
+	public Hashtable<String, Object> getChildPolls() {
+		return childPolls;
+	}
 
+	public void setChildPolls(Hashtable<String, Object> childPolls) {
+		this.childPolls = childPolls;
+	}
 }

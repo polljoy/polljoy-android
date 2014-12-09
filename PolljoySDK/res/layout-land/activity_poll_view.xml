@@ -76,27 +76,16 @@
                             android:layout_height="wrap_content"
                             android:layout_centerInParent="true" >
 
-                            <TextView
-                                android:id="@+id/virtualAmountRewardTextView"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_centerHorizontal="true"
-                                android:gravity="center_vertical|center_horizontal"
-                                android:text="Earn"
-                                android:textAlignment="center"
-                                android:textSize="14sp" />
-
                             <RelativeLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_below="@id/virtualAmountRewardTextView"
                                 android:layout_centerHorizontal="true"
                                 android:layout_marginTop="1dp" >
 
                                 <ImageView
                                     android:id="@+id/virtualAmountImageView"
-                                    android:layout_width="15dp"
-                                    android:layout_height="15dp"
+                                    android:layout_width="30dp"
+                                    android:layout_height="30dp"
                                     android:layout_centerVertical="true"
                                     android:layout_marginRight="5dp"
                                     android:scaleType="fitCenter"
@@ -105,16 +94,39 @@
 
                                 <TextView
                                     android:id="@+id/virtualAmountTextView"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:layout_centerVertical="true"
+                                    android:layout_alignParentBottom="false"
+                                    android:layout_alignParentEnd="false"
+                                    android:layout_alignParentLeft="false"
+                                    android:layout_alignParentRight="false"
+                                    android:layout_alignParentStart="false"
+                                    android:layout_alignParentTop="false"
+                                    android:layout_centerInParent="false"
+                                    android:layout_marginTop="@dimen/virtual_amount_text_view_height"
                                     android:layout_toRightOf="@id/virtualAmountImageView"
                                     android:gravity="center_vertical"
                                     android:maxLines="1"
                                     android:text="999999"
                                     android:textAlignment="center"
                                     android:textSize="14sp" />
+
+                                <TextView
+                                    android:id="@+id/virtualAmountRewardTextView"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentLeft="false"
+                                    android:layout_alignParentRight="false"
+                                    android:layout_alignParentTop="false"
+                                    android:layout_centerInParent="false"
+                                    android:layout_toRightOf="@+id/virtualAmountImageView"
+                                    android:gravity="center_vertical"
+                                    android:text="Earn"
+                                    android:textAlignment="center"
+                                    android:textSize="14sp" />
+
                             </RelativeLayout>
+
                         </RelativeLayout>
                     </RelativeLayout>
                 </RelativeLayout>
@@ -358,8 +370,8 @@
 
                                     <ImageView
                                         android:id="@+id/rewardImageView"
-                                        android:layout_width="15dp"
-                                        android:layout_height="15dp"
+                                        android:layout_width="30dp"
+                                        android:layout_height="30dp"
                                         android:layout_gravity="center"
                                         android:layout_marginRight="5dp"
                                         android:scaleType="fitCenter"
@@ -375,7 +387,7 @@
                                         android:maxLines="1"
                                         android:text="9999999"
                                         android:textAlignment="center"
-                                        android:textSize="12sp" />
+                                        android:textSize="14sp" />
                                 </LinearLayout>
                             </RelativeLayout>
 
@@ -425,7 +437,7 @@
                         android:text="Earn"
                         android:textAlignment="center"
                         android:textSize="12sp"
-                        android:layout_marginLeft="25dp" />
+                        android:layout_marginLeft="35dp" />
 
                     <TextView
                         android:id="@+id/virtualAmountTextView2"
@@ -441,11 +453,9 @@
 
                     <ImageView
                         android:id="@+id/virtualAmountImageView2"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:layout_alignBottom="@id/virtualAmountTextView2"
-                        android:layout_marginRight="5dp"
-                        android:layout_toLeftOf="@id/virtualAmountTextView2"
                         android:scaleType="fitCenter"
                         android:src="@drawable/reward_image"
                         android:visibility="visible" />

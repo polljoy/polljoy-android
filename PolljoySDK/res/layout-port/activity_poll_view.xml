@@ -53,14 +53,15 @@
                     android:id="@+id/offerLayout"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerVertical="true" >
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="5dp" >
 
                     <TextView
                         android:id="@+id/virtualAmountRewardTextView"
                         android:layout_width="40dp"
                         android:layout_height="@dimen/reward_text_view_height"
                         android:layout_marginLeft="40dp"
-                        android:gravity="center_vertical"
+                        android:gravity="left|center_vertical"
                         android:text="Earn"
                         android:textAlignment="center"
                         android:textSize="12sp" />
@@ -73,14 +74,14 @@
                         android:layout_below="@id/virtualAmountRewardTextView"
                         android:gravity="center_vertical"
                         android:maxLines="1"
-                        android:text="9999999"
+                        android:text="999999"
                         android:textAlignment="center"
                         android:textSize="12sp" />
 
                     <ImageView
                         android:id="@+id/virtualAmountImageView"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:layout_alignBottom="@id/virtualAmountTextView"
                         android:layout_marginRight="5dp"
                         android:layout_toLeftOf="@id/virtualAmountTextView"
@@ -319,8 +320,8 @@
 
                             <ImageView
                                 android:id="@+id/rewardImageView"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
                                 android:layout_gravity="center"
                                 android:layout_marginRight="5dp"
                                 android:scaleType="fitCenter"
@@ -336,7 +337,7 @@
                                 android:maxLines="1"
                                 android:text="9999999"
                                 android:textAlignment="center"
-                                android:textSize="12sp" />
+                                android:textSize="14sp" />
                         </LinearLayout>
                     </RelativeLayout>
 
@@ -394,8 +395,8 @@
 
             <ImageView
                 android:id="@+id/virtualAmountImageView2"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
                 android:layout_alignBottom="@id/virtualAmountTextView2"
                 android:layout_marginRight="5dp"
                 android:layout_toLeftOf="@id/virtualAmountTextView2"
