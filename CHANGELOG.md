@@ -1,5 +1,9 @@
 ## Version History
 
+### Version 2.2.1
+ - support REST API 2.2
+ - remove Collect Reward and Thank You screen with message to reduce user's action
+
 ### Version 2.1
  - support REST API 2.1
  - prerequisite polls come in a row

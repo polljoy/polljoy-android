@@ -1,5 +1,6 @@
 package com.polljoy;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -19,6 +20,10 @@ import android.os.Build;
 import android.os.Handler;
 import android.view.Display;
 import android.view.WindowManager;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnErrorListener;
+import android.media.MediaPlayer.OnPreparedListener;
 
 import com.polljoy.PJAsyncTask.PJAsyncTaskListener;
 import com.polljoy.PJPollViewActivity.PJPollViewActivityDelegate;
@@ -49,8 +54,9 @@ public class Polljoy {
 	};
 
 	public final static String PJ_SDK_NAME = "Polljoy";
-	public final static String PJ_API_SANDBOX_endpoint = "https://apisandbox.polljoy.com/2.1/poll/";
-	public final static String PJ_API_endpoint = "http://api.polljoy.com/2.1/poll/";
+	public final static String PJ_API_SANDBOX_endpoint = "https://apisandbox.polljoy.com/2.2/poll/";
+	public final static String PJ_API_endpoint = "https://api.polljoy.com/2.2/poll/";
+	static String _SDKVersion = "2.2.1";
 	static boolean _isRegisteringSession = false;
 	static boolean _needsAutoShow = false;
 
@@ -79,6 +85,10 @@ public class Polljoy {
 	static boolean _autoShow;
 	static boolean _isSandboxMode = false;
 
+	static MediaPlayer customSound;
+	static double _messageShowDuration = 2.0;
+	static PJRewardThankyouMessageStyle _rewardThankyouMessageStyle = PJRewardThankyouMessageStyle.PJRewardThankyouMessageStyleMessage ;
+
 	// Android only
 	static PJScreenType _screenType;
 	public final static String TAG = "Polljoy";
@@ -97,7 +107,12 @@ public class Polljoy {
 			String response = poll.response;
 			int pollToken = poll.pollToken;
 			Polljoy.responsePoll(pollToken, response);	
-
+			
+		    // check if virtual reward answer assigned
+		    if (poll.virtualRewardAnswer != null && !poll.virtualRewardAnswer.equals("null") && poll.virtualRewardAnswer.length() > 0) {		
+		    	if (!poll.virtualRewardAnswer.equals(response)) poll.virtualAmount = 0 ;  // no reward if response not equal to reward answer
+		    }
+		    
 			if (poll.virtualAmount > 0) {
 				pollView.showActionAfterResponse();
 			} else {
@@ -139,25 +154,26 @@ public class Polljoy {
 				}
 			}
 			
-			if (poll.type.equals("M") || poll.type.equals("I")) {
-				String url = poll.choiceUrl.get(response);
-				if (url != null) {
-					try {
-						Uri uri = Uri.parse(url);
-						Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-						pollView.startActivity(intent);
-					} catch (android.content.ActivityNotFoundException e) {
-						Log.d(TAG, "Url: " + url);
-						Log.d(TAG,
-								"ActivityNotFoundException: "
-										+ e.getLocalizedMessage());
-						e.printStackTrace();
-					} catch (NullPointerException e) {
-						e.printStackTrace();
+			if (_rewardThankyouMessageStyle == PJRewardThankyouMessageStyle.PJRewardThankyouMessageStylePopup) {
+				if (poll.type.equals("M") || poll.type.equals("I")) {
+					String url = poll.choiceUrl.get(response);
+					if (url != null) {
+						try {
+							Uri uri = Uri.parse(url);
+							Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+							pollView.startActivity(intent);
+						} catch (android.content.ActivityNotFoundException e) {
+							Log.d(TAG, "Url: " + url);
+							Log.d(TAG,
+									"ActivityNotFoundException: "
+											+ e.getLocalizedMessage());
+							e.printStackTrace();
+						} catch (NullPointerException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 			}
-
 		}
 
 		@Override
@@ -228,6 +244,27 @@ public class Polljoy {
 				}
 			}
 
+			if (_rewardThankyouMessageStyle == PJRewardThankyouMessageStyle.PJRewardThankyouMessageStyleMessage) {
+				if (poll.type.equals("M") || poll.type.equals("I")) {
+					String url = poll.choiceUrl.get(response);
+					Log.d(TAG, "Url: " + url);
+					if (url != null) {
+						try {
+							Uri uri = Uri.parse(url);
+							Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+							pollView.startActivity(intent);
+						} catch (android.content.ActivityNotFoundException e) {
+							Log.d(TAG, "Url: " + url);
+							Log.d(TAG,
+									"ActivityNotFoundException: "
+											+ e.getLocalizedMessage());
+							e.printStackTrace();
+						} catch (NullPointerException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
 		}
 
 	};
@@ -296,6 +333,7 @@ public class Polljoy {
 						_app = app;
 						_sessionId = appJson.optString("sessionId");
 						_userId = appJson.optString("userId");
+						downloadCustomSound();
 						downloadAppImages();
 						Log.i(TAG, "startSession " + "_sessionId: "
 								+ _sessionId);
@@ -311,6 +349,7 @@ public class Polljoy {
 						Log.i(TAG, "startSession " + "_timeSinceInstall: "
 								+ String.valueOf(_timeSinceInstall));
 						Log.i(TAG, "startSession " + "App: " + _app.appName);
+						Log.i(TAG, "startSession " + "customSoundUrl: " + _app.customSoundUrl);
 					} else {
 						Log.e(TAG, Polljoy.PJ_SDK_NAME + ": Error - Status: "
 								+ String.valueOf(status));
@@ -516,11 +555,14 @@ public class Polljoy {
 					if (status == PJResponseStatus.PJSuccess.statusCode()) {
 						String virtualAmount = jsonObject
 								.optString("virtualAmount");
+						String virtualCurrency = jsonObject
+								.optString("virtualCurrency");
 						String responseString = jsonObject
 								.optString("response");
 						Log.i(TAG, "status: " + status + " message: " + message);
 						Log.i(TAG, "response: " + responseString);
 						Log.i(TAG, "virtualAmount: " + virtualAmount);
+						Log.i(TAG, "virtualCurrency: " + virtualCurrency);
 					} else {
 						Log.e(TAG, Polljoy.PJ_SDK_NAME + ": Error - Status: "
 								+ status + " (" + message + ")");
@@ -640,6 +682,10 @@ public class Polljoy {
 		downloadAppImage(imageUrlSet.buttonImageP, "buttonImageP");
 	}
 
+	static void downloadCustomSound() {
+		downloadCustomSound(_app.customSoundUrl, "customSound.wav");
+	}
+	
 	synchronized static void addCacheTarget(Target target) {
 		imageCacheTargets.add(target);
 	}
@@ -860,6 +906,45 @@ public class Polljoy {
 		    }
 		}
 	}
+
+	static void downloadCustomSound(String soundUrl, final String name) {
+		
+		if (_app.customSoundUrl != null && !_app.customSoundUrl.equals("null") && _app.customSoundUrl.length() > 0) {		
+			MediaPlayer mediaPlayer = new MediaPlayer();
+	    	mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+	    	try {
+				mediaPlayer.setDataSource(_app.customSoundUrl);
+			} catch (IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalStateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+	    	mediaPlayer.prepareAsync();
+	    	mediaPlayer.setOnPreparedListener(new OnPreparedListener() {
+	    	        @Override
+	    	        public void onPrepared(MediaPlayer mp) {
+	    	            customSound = mp;
+	    	            customSound.setLooping(false);
+	    	            //customSound.start();
+	    	        }
+	    	    });
+    	    mediaPlayer.setOnErrorListener(new OnErrorListener() {
+    	        @Override
+    	        public boolean onError(MediaPlayer mp, int what, int extra) {
+    	            return false;
+    	        }
+    	    });
+	    }
+	}
 	
 	public static void showPoll() {
 		if (_currentShowingPollToken != Integer.MIN_VALUE) {
@@ -1063,6 +1148,18 @@ public class Polljoy {
 
 	public static PJPollViewActivityDelegate getPollViewActivityDelegate() {
 		return _pollViewActivityDelegate;
+	}
+
+	public static String getSDKVersion() {
+		return _SDKVersion;
+	}
+
+	public static void setMessageShowDuration (double seconds){
+	    _messageShowDuration = seconds;
+	}
+
+	public static void setRewardThankyouMessageStyle (PJRewardThankyouMessageStyle style) {
+	    _rewardThankyouMessageStyle = style;
 	}
 
 }

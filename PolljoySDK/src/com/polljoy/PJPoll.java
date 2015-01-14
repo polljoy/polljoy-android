@@ -87,6 +87,9 @@ public class PJPoll implements Serializable {
 	PJPollImageUrlSet imageUrlSetForDisplay = new PJPollImageUrlSet();
 	Hashtable<String, Object> childPolls = null;
 	int searchDepth = 0;
+	String collectMsgText = null;
+	String thankyouMsgText = null;
+	String virtualRewardAnswer = null;
 	
 	public final static String TAG = "PJPoll";
 	
@@ -160,7 +163,10 @@ public class PJPoll implements Serializable {
 		this.virtualCurrency = jsonObject.optString("virtualCurrency");
 		this.submitButtonText = jsonObject.optString("submitButtonText");
 		this.thankyouButtonText = jsonObject.optString("thankyouButtonText");
-
+		this.collectMsgText = jsonObject.optString("collectMsgText");
+		this.thankyouMsgText = jsonObject.optString("thankyouMsgText");
+		this.virtualRewardAnswer = jsonObject.optString("virtualRewardAnswer");
+		
 		String dateString = jsonObject.optString("sendDate");
 		this.sendDate = PJDateHelper.parseDateString(dateString);
 		this.appUsageTime = jsonObject.optInt("appUsageTime");

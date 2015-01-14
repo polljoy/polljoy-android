@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.polljoy.R;
 
@@ -14,7 +15,9 @@ import com.polljoy.R;
 public class ImageTextButton extends RelativeLayout {
 	public ImageView imageView;
 	public Button button;
-
+	public TextView message;
+	public ImageView messageImage;
+	
 	public ImageTextButton(Context context) {
 		super(context, null);
 	}
@@ -29,6 +32,14 @@ public class ImageTextButton extends RelativeLayout {
 		this.button.setClickable(false);
 		this.button.setFocusable(false);
 		this.button.setText(attributeSet.getAttributeValue("http://schemas.android.com/apk/res/android", "text"));
+		this.message = (TextView) findViewById(R.id.message);
+		this.message.setTypeface(Typeface.SANS_SERIF);
+		this.message.setClickable(false);
+		this.message.setFocusable(false);
+		this.message.setText(attributeSet.getAttributeValue("http://schemas.android.com/apk/res/android", "text"));
+		this.message.setText("");
+		this.messageImage = (ImageView) findViewById(R.id.messageImage);
+		
 		this.setClickable(true);
 		this.setFocusable(true);
 	}
@@ -43,18 +54,22 @@ public class ImageTextButton extends RelativeLayout {
 
 	public void setTextColor(int color) {
 		this.button.setTextColor(color);
+		this.message.setTextColor(color);
 	}
 
 	public void setTextSize(float size) {
 		this.button.setTextSize(size);
+		this.message.setTextSize(size);
 	}
 
 	public void setTextSize(int unit, float size) {
 		this.button.setTextSize(unit, size);
+		this.message.setTextSize(unit, size);
 	}
 
 	public void setMaxLines(int maxlines) {
 		this.button.setMaxLines(maxlines);
+		this.message.setMaxLines(maxlines);
 	}
 
 	public void setBackgroundResource(int resid) {
@@ -74,4 +89,15 @@ public class ImageTextButton extends RelativeLayout {
 		return this.button.getText();
 	}
 
+	public float getTextSize() {
+		return this.button.getTextSize();
+	}
+	
+	public void setMessageText(String text) {
+		this.message.setText(text);
+	}
+
+	public void setMessageImageResource(int resourceID) {
+		this.messageImage.setImageResource(resourceID);
+	}
 }

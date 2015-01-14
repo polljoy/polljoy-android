@@ -8,14 +8,20 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
-import android.util.Log;
+import android.os.Handler;
+import android.text.Layout.Alignment;
+//import android.util.DisplayMetrics;
+//import android.util.Log;
 import android.util.TypedValue;
+import android.text.format.*;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -27,13 +33,16 @@ import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.polljoy.internal.AutofitTextView;
 import com.polljoy.internal.ImageTextButton;
+import com.polljoy.internal.Log;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Picasso.LoadedFrom;
 import com.squareup.picasso.RequestCreator;
@@ -90,7 +99,8 @@ public class PJPollViewActivity extends Activity {
 	String resonseText = null;
 	BitmapDrawable borderImageDrawable;
 
-
+	protected ImageTextButton answeredButton;
+	protected boolean enabled = true;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -141,6 +151,13 @@ public class PJPollViewActivity extends Activity {
         return true;
     }
 
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (enabled)
+            return super.dispatchTouchEvent(ev);
+        return true;
+    }
+    
     private boolean checkTouchOutside (MotionEvent event) {
         if ( event.getRawX() < this.pollView.getLeft()){
             return true;
@@ -231,7 +248,7 @@ public class PJPollViewActivity extends Activity {
             }
         };
         imagePollMain.setOnClickListener(imageClickListener);
-
+        
         OnClickListener confirmImageListener= new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -360,6 +377,8 @@ public class PJPollViewActivity extends Activity {
 		} else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 			this.configureLandscapeLayout(screenConfig);
 		}
+		
+        imagePollMain.setTextSize(TypedValue.COMPLEX_UNIT_PX, screenConfig.fontSize);
 	}
 
 	void updatePollViewState(boolean userResponded) {
@@ -410,19 +429,39 @@ public class PJPollViewActivity extends Activity {
 				this.offerLayout.setVisibility(View.INVISIBLE);
 			}
 		} else {
-			mcButtonsLayout.setVisibility(View.INVISIBLE);
-			textResponseLayout.setVisibility(View.INVISIBLE);
-			offerLayout.setVisibility(View.INVISIBLE);
-            imagePollLayout.setVisibility(View.INVISIBLE);
-			this.questionTextView.setText(myPoll.customMessage);
-			closeButton.setVisibility(View.INVISIBLE);
-			userRespondedLayout.setVisibility(View.VISIBLE);
+
 			if (myPoll.virtualAmount > 0) {
-				responseRewardsLayout.setVisibility(View.VISIBLE);
-				collectButton.setText(myPoll.collectButtonText);
+				if (Polljoy._rewardThankyouMessageStyle == PJRewardThankyouMessageStyle.PJRewardThankyouMessageStylePopup) {
+					mcButtonsLayout.setVisibility(View.INVISIBLE);
+					textResponseLayout.setVisibility(View.INVISIBLE);
+					offerLayout.setVisibility(View.INVISIBLE);
+		            imagePollLayout.setVisibility(View.INVISIBLE);
+					this.questionTextView.setText(myPoll.customMessage);
+					closeButton.setVisibility(View.INVISIBLE);
+					userRespondedLayout.setVisibility(View.VISIBLE);
+					
+					responseRewardsLayout.setVisibility(View.VISIBLE);
+					collectButton.setText(myPoll.collectButtonText);
+				}
+				else {
+					showCollectMsg();
+				}
 			} else {
-				responseRewardsLayout.setVisibility(View.INVISIBLE);
-				collectButton.setText(myPoll.thankyouButtonText);
+				if (Polljoy._rewardThankyouMessageStyle == PJRewardThankyouMessageStyle.PJRewardThankyouMessageStylePopup) {
+					mcButtonsLayout.setVisibility(View.INVISIBLE);
+					textResponseLayout.setVisibility(View.INVISIBLE);
+					offerLayout.setVisibility(View.INVISIBLE);
+		            imagePollLayout.setVisibility(View.INVISIBLE);
+					this.questionTextView.setText(myPoll.customMessage);
+					closeButton.setVisibility(View.INVISIBLE);
+					userRespondedLayout.setVisibility(View.VISIBLE);
+					
+					responseRewardsLayout.setVisibility(View.INVISIBLE);
+					collectButton.setText(myPoll.thankyouButtonText);
+				}
+				else {
+					showThankyouMsg();
+				}
 			}
 		}
 	}
@@ -907,10 +946,17 @@ public class PJPollViewActivity extends Activity {
 			myPoll.response = button.getText().toString();
 		}
 		userResponded = true;
-		closeButton.setVisibility(View.VISIBLE);
-		mcButtonsLayout.setVisibility(View.INVISIBLE);
-		textResponseLayout.setVisibility(View.INVISIBLE);
-        imagePollLayout.setVisibility(View.INVISIBLE);
+		
+		if (Polljoy._rewardThankyouMessageStyle == PJRewardThankyouMessageStyle.PJRewardThankyouMessageStylePopup) {
+			closeButton.setVisibility(View.VISIBLE);
+			mcButtonsLayout.setVisibility(View.INVISIBLE);
+			textResponseLayout.setVisibility(View.INVISIBLE);
+	        imagePollLayout.setVisibility(View.INVISIBLE);
+		}
+		else {
+			closeButton.setVisibility(View.VISIBLE);
+		}
+        answeredButton = button;
 		this.delegate.PJPollViewDidAnswered(this, myPoll);
 	}
 
@@ -1071,5 +1117,85 @@ public class PJPollViewActivity extends Activity {
 
 	public void showActionAfterResponse() {
 		this.updatePollViewState(userResponded);
+	}
+	
+	void showCollectMsg() {
+		Rect rect = new Rect();
+		answeredButton.getDrawingRect(rect);
+		
+		if (myPoll.type.equals("I")) {
+			imagePollConfirm.setVisibility(View.INVISIBLE);
+			answeredButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, answeredButton.getTextSize());
+			answeredButton.message.setLines(2);
+
+			this.adjustLayoutSize(answeredButton.messageImage, rect.height()/4, rect.height()/4);
+		}
+		else {
+			this.adjustLayoutSize(answeredButton.messageImage, rect.height(), rect.height());
+		}
+		
+		answeredButton.setTextColor(myPoll.app.getFontColor());
+		answeredButton.setMessageText(String.valueOf(myPoll.virtualAmount) + " " +  myPoll.collectMsgText);
+		answeredButton.messageImage.setImageBitmap(((BitmapDrawable)rewardImageView.getDrawable()).getBitmap());
+		answeredButton.button.setVisibility(View.INVISIBLE);
+		answeredButton.imageView.setVisibility(View.INVISIBLE);
+		answeredButton.message.setVisibility(View.VISIBLE);
+		answeredButton.messageImage.setVisibility(View.VISIBLE);
+		answeredButton.setVisibility(View.VISIBLE);
+		
+		this.offerLayout.setVisibility(View.INVISIBLE);
+		this.closeButton.setVisibility(View.INVISIBLE);
+		this.enable(false);
+
+		Handler delayHandler = new Handler();
+		delayHandler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				userConfirmed(answeredButton);
+			}
+		}, (long) (Polljoy._messageShowDuration * 1000));
+		
+		
+		playCollectSound();
+	}
+	
+	//@SuppressWarnings("null")
+	void showThankyouMsg() {
+
+		if (myPoll.type.equals("I")) {
+			imagePollConfirm.setVisibility(View.INVISIBLE);
+			answeredButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, answeredButton.getTextSize());
+		}
+		
+		answeredButton.setTextColor(myPoll.app.getFontColor());
+		answeredButton.setMessageText(myPoll.thankyouMsgText);
+		answeredButton.button.setVisibility(View.INVISIBLE);
+		answeredButton.imageView.setVisibility(View.INVISIBLE);
+		answeredButton.message.setVisibility(View.VISIBLE);
+		answeredButton.messageImage.setVisibility(View.INVISIBLE);
+		this.adjustLayoutSize(answeredButton.messageImage, 0, 0);
+		answeredButton.setVisibility(View.VISIBLE);
+		
+		this.closeButton.setVisibility(View.INVISIBLE);
+		this.offerLayout.setVisibility(View.INVISIBLE);
+		this.enable(false);
+		
+		Handler delayHandler = new Handler();
+		delayHandler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				userConfirmed(answeredButton);
+			}
+		}, (long) (Polljoy._messageShowDuration * 1000));
+	}
+	
+	void playCollectSound() {
+	    if (myPoll.app.customSoundUrl != null && !myPoll.app.customSoundUrl.equals("null") && myPoll.app.customSoundUrl.length() > 0) {		
+	    	Polljoy.customSound.start();
+	    }
+	}
+	
+	public void enable(boolean b) {
+	    enabled = b;
 	}
 }

@@ -1,5 +1,7 @@
 package com.polljoy.internal;
 
+import java.io.File;
+import java.net.URL;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -11,6 +13,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.preference.PreferenceManager;
 
+import com.polljoy.Polljoy;
 import com.polljoy.R;
 
 public class PolljoyCore {
@@ -97,5 +100,22 @@ public class PolljoyCore {
 		} else {
 			return session;
 		}
+	}
+	
+	public static String createFilenameFromUrl(Context context, String url) 
+	{
+		String[] fileComponent = url.split("?");
+		String filename = fileComponent[0].substring(fileComponent[0].lastIndexOf('/') + 1);
+		String timestamp = (fileComponent.length > 1) ?  fileComponent [1] : "0000" ;
+		String cacheDirectory = context.getCacheDir() + File.pathSeparator + Polljoy.PJ_SDK_NAME;
+		File dir = new File(cacheDirectory);
+		
+		if (!dir.exists()) {
+			if (!dir.mkdir()){
+				Log.d("polljoy", "cannot create cache folder: " + cacheDirectory);
+			}
+		}
+
+		return cacheDirectory + File.pathSeparator + timestamp + "-" + filename;
 	}
 }

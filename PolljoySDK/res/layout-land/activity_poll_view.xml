@@ -437,7 +437,7 @@
                         android:text="Earn"
                         android:textAlignment="center"
                         android:textSize="12sp"
-                        android:layout_marginLeft="35dp" />
+                        android:layout_marginLeft="40dp" />
 
                     <TextView
                         android:id="@+id/virtualAmountTextView2"
