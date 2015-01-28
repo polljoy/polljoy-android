@@ -1,5 +1,9 @@
 ## Version History
 
+### Version 2.2.2
+ - support custom Tap sound
+ - fine tune default close button size and default reward icon to have better UI
+
 ### Version 2.2.1
  - support REST API 2.2
  - remove Collect Reward and Thank You screen with message to reduce user's action

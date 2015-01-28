@@ -96,7 +96,7 @@ public class PJPollViewActivity extends Activity {
 	View pollImageLayout;
 	View responseRewardsLayout;
 	boolean userResponded = false;
-	String resonseText = null;
+	String responseText = null;
 	BitmapDrawable borderImageDrawable;
 
 	protected ImageTextButton answeredButton;
@@ -177,7 +177,7 @@ public class PJPollViewActivity extends Activity {
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
-		this.resonseText = this.responseEditText.getText().toString();
+		this.responseText = this.responseEditText.getText().toString();
 		setupViews();
 	}
 
@@ -200,17 +200,24 @@ public class PJPollViewActivity extends Activity {
 		this.questionTextView = (TextView) findViewById(R.id.questionTextView);
 		this.mcButtonsLayout = (View) findViewById(R.id.mcButtonsLayout);
 		this.mcButton1 = (ImageTextButton) findViewById(R.id.mcButton1);
+        this.mcButton1.setSoundEffectsEnabled(false);
 		this.mcButton2 = (ImageTextButton) findViewById(R.id.mcButton2);
+        this.mcButton2.setSoundEffectsEnabled(false);
 		this.mcButton3 = (ImageTextButton) findViewById(R.id.mcButton3);
+        this.mcButton3.setSoundEffectsEnabled(false);
 		this.mcButton4 = (ImageTextButton) findViewById(R.id.mcButton4);
+        this.mcButton4.setSoundEffectsEnabled(false);
 		ImageTextButton[] mcButtons = { mcButton1, mcButton2, mcButton3,
 				mcButton4 };
 
 		this.textResponseLayout = (View) findViewById(R.id.textResponseLayout);
 		this.responseEditText = (EditText) findViewById(R.id.responseEditText);
 		this.submitButton = (ImageTextButton) findViewById(R.id.submitButton);
+        this.submitButton.setSoundEffectsEnabled(false);
 		this.collectButton = (ImageTextButton) findViewById(R.id.collectButton);
+        this.collectButton.setSoundEffectsEnabled(false);
 		this.closeButton = (ImageButton) findViewById(R.id.closeButton);
+        this.closeButton.setSoundEffectsEnabled(false);
 		this.backgroundColorOverlay = (View) findViewById(R.id.backgroundColorOverlay);
 		this.borderImageOverlay = (ImageView) findViewById(R.id.borderImageOverlay);
 		this.rewardImageView = (ImageView) findViewById(R.id.rewardImageView);
@@ -223,10 +230,15 @@ public class PJPollViewActivity extends Activity {
 
         this.imagePollLayout = (View) findViewById(R.id.imagePollLayout);
         this.imagePollMain = (ImageTextButton) findViewById(R.id.imagePollMainImage);
+        this.imagePollMain.setSoundEffectsEnabled(false);
         this.imagePoll1 = (ImageTextButton) findViewById(R.id.imagePoll1);
+        this.imagePoll1.setSoundEffectsEnabled(false);
         this.imagePoll2 = (ImageTextButton) findViewById(R.id.imagePoll2);
+        this.imagePoll2.setSoundEffectsEnabled(false);
         this.imagePoll3 = (ImageTextButton) findViewById(R.id.imagePoll3);
+        this.imagePoll3.setSoundEffectsEnabled(false);
         this.imagePoll4 = (ImageTextButton) findViewById(R.id.imagePoll4);
+        this.imagePoll4.setSoundEffectsEnabled(false);
 
         OnClickListener changeImageListener = new OnClickListener() {
             @Override
@@ -240,6 +252,7 @@ public class PJPollViewActivity extends Activity {
             currentImage.setOnClickListener(changeImageListener);
         }
         this.imagePollConfirm = (Button) findViewById(R.id.imagePollConfirm);
+        this.imagePollConfirm.setSoundEffectsEnabled(false);
 
         OnClickListener imageClickListener= new OnClickListener() {
             @Override
@@ -307,9 +320,9 @@ public class PJPollViewActivity extends Activity {
 
 		this.responseEditText.setTextSize(TypedValue.COMPLEX_UNIT_PX,
 				screenConfig.fontSize);
-		this.responseEditText.setText(this.resonseText);
+		this.responseEditText.setText(this.responseText);
 
-		OnClickListener submisionListener = new OnClickListener() {
+		OnClickListener submissionListener = new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
@@ -318,9 +331,9 @@ public class PJPollViewActivity extends Activity {
 
 		};
 		for (ImageTextButton button : mcButtons) {
-			button.setOnClickListener(submisionListener);
+			button.setOnClickListener(submissionListener);
 		}
-		this.submitButton.setOnClickListener(submisionListener);
+		this.submitButton.setOnClickListener(submissionListener);
 		OnClickListener collectListener = new OnClickListener() {
 
 			@Override
@@ -962,6 +975,7 @@ public class PJPollViewActivity extends Activity {
 
 
 	void userSkipped(View view) {
+        playTapSound();
 		if (userResponded) {
 			userConfirmed(null);
 		} else {
@@ -995,9 +1009,13 @@ public class PJPollViewActivity extends Activity {
 
         });
         this.imagePollMain.setText(view.getText().toString());
+
+        playTapSound();
     }
     void clickImagePoll(ImageTextButton view) {
-            this.imagePollConfirm.setVisibility(View.VISIBLE);
+        this.imagePollConfirm.setVisibility(View.VISIBLE);
+
+        playTapSound();
     }
 
     void setImagePollPortraitLayout (PJScreenConfiguration screenConfig) {
@@ -1187,14 +1205,26 @@ public class PJPollViewActivity extends Activity {
 				userConfirmed(answeredButton);
 			}
 		}, (long) (Polljoy._messageShowDuration * 1000));
+
+        playTapSound();
 	}
 	
 	void playCollectSound() {
-	    if (myPoll.app.customSoundUrl != null && !myPoll.app.customSoundUrl.equals("null") && myPoll.app.customSoundUrl.length() > 0) {		
-	    	Polljoy.customSound.start();
-	    }
+        if (Polljoy.customSound != null) {
+            if (myPoll.app.customSoundUrl != null && !myPoll.app.customSoundUrl.equals("null") && myPoll.app.customSoundUrl.length() > 0) {
+                Polljoy.customSound.start();
+            }
+        }
 	}
-	
+
+    void playTapSound() {
+        if (Polljoy.customTapSound != null) {
+            if (myPoll.app.customTapSoundUrl != null && !myPoll.app.customTapSoundUrl.equals("null") && myPoll.app.customTapSoundUrl.length() > 0) {
+                Polljoy.customTapSound.start();
+            }
+        }
+    }
+
 	public void enable(boolean b) {
 	    enabled = b;
 	}

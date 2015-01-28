@@ -45,6 +45,7 @@ public class PJApp implements Serializable {
 	int overlayAlpha = 100;
 	String rewardImageUrl = null;
 	String customSoundUrl = null;
+    String customTapSoundUrl = null;
 
 	PJApp(JSONObject jsonObject) {
 		this.appId = jsonObject.optString("appId");
@@ -126,6 +127,7 @@ public class PJApp implements Serializable {
 		this.modifiedDate = PJDateHelper.parseDateString(dateString);
 		this.overlayAlpha = jsonObject.optInt("overlayAlpha");
 		this.customSoundUrl = jsonObject.optString("customSoundUrl");
+        this.customTapSoundUrl = jsonObject.optString("customTapSoundUrl");
 	}
 
 	public PJPollImageUrlSet imageUrlSetForScreenType(PJScreenType screenType) {
@@ -380,4 +382,12 @@ public class PJApp implements Serializable {
 	public void setCustomSoundUrl(String customSoundUrl) {
 		this.customSoundUrl = customSoundUrl;
 	}
+
+    public String getCustomTapSoundUrl() {
+        return customTapSoundUrl;
+    }
+
+    public void setCustomTapSoundUrl(String customTapSoundUrl) {
+        this.customTapSoundUrl = customSoundUrl;
+    }
 }

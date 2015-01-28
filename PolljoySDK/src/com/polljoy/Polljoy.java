@@ -56,7 +56,7 @@ public class Polljoy {
 	public final static String PJ_SDK_NAME = "Polljoy";
 	public final static String PJ_API_SANDBOX_endpoint = "https://apisandbox.polljoy.com/2.2/poll/";
 	public final static String PJ_API_endpoint = "https://api.polljoy.com/2.2/poll/";
-	static String _SDKVersion = "2.2.1";
+	static String _SDKVersion = "2.2.2";
 	static boolean _isRegisteringSession = false;
 	static boolean _needsAutoShow = false;
 
@@ -85,8 +85,9 @@ public class Polljoy {
 	static boolean _autoShow;
 	static boolean _isSandboxMode = false;
 
-	static MediaPlayer customSound;
-	static double _messageShowDuration = 2.0;
+	static MediaPlayer customSound = null;
+    static MediaPlayer customTapSound = null;
+	static double _messageShowDuration = 1.5;
 	static PJRewardThankyouMessageStyle _rewardThankyouMessageStyle = PJRewardThankyouMessageStyle.PJRewardThankyouMessageStyleMessage ;
 
 	// Android only
@@ -142,6 +143,7 @@ public class Polljoy {
 					if (_delegate != null) {
 						_delegate.PJPollWillDismiss(poll);
 					}
+                    pollView.playTapSound();
 					pollView.finish();
 					if (_delegate != null) {
 						_delegate.PJPollWillDismiss(poll);
@@ -154,7 +156,9 @@ public class Polljoy {
 				}
 			}
 			
-			if (_rewardThankyouMessageStyle == PJRewardThankyouMessageStyle.PJRewardThankyouMessageStylePopup) {
+			if ((_rewardThankyouMessageStyle == PJRewardThankyouMessageStyle.PJRewardThankyouMessageStylePopup) || 
+				((_rewardThankyouMessageStyle == PJRewardThankyouMessageStyle.PJRewardThankyouMessageStyleMessage) && (_polls.size() > 0))	
+				){
 				if (poll.type.equals("M") || poll.type.equals("I")) {
 					String url = poll.choiceUrl.get(response);
 					if (url != null) {
@@ -334,6 +338,7 @@ public class Polljoy {
 						_sessionId = appJson.optString("sessionId");
 						_userId = appJson.optString("userId");
 						downloadCustomSound();
+                        downloadCustomTapSound();
 						downloadAppImages();
 						Log.i(TAG, "startSession " + "_sessionId: "
 								+ _sessionId);
@@ -350,6 +355,7 @@ public class Polljoy {
 								+ String.valueOf(_timeSinceInstall));
 						Log.i(TAG, "startSession " + "App: " + _app.appName);
 						Log.i(TAG, "startSession " + "customSoundUrl: " + _app.customSoundUrl);
+                        Log.i(TAG, "startSession " + "customTapSoundUrl: " + _app.customTapSoundUrl);
 					} else {
 						Log.e(TAG, Polljoy.PJ_SDK_NAME + ": Error - Status: "
 								+ String.valueOf(status));
@@ -685,7 +691,10 @@ public class Polljoy {
 	static void downloadCustomSound() {
 		downloadCustomSound(_app.customSoundUrl, "customSound.wav");
 	}
-	
+
+    static void downloadCustomTapSound() {
+        downloadCustomTapSound(_app.customTapSoundUrl, "customTapSound.wav");
+    }
 	synchronized static void addCacheTarget(Target target) {
 		imageCacheTargets.add(target);
 	}
@@ -908,7 +917,7 @@ public class Polljoy {
 	}
 
 	static void downloadCustomSound(String soundUrl, final String name) {
-		
+        Log.d(TAG,"customSoundUrl download started");
 		if (_app.customSoundUrl != null && !_app.customSoundUrl.equals("null") && _app.customSoundUrl.length() > 0) {		
 			MediaPlayer mediaPlayer = new MediaPlayer();
 	    	mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -934,6 +943,7 @@ public class Polljoy {
 	    	        public void onPrepared(MediaPlayer mp) {
 	    	            customSound = mp;
 	    	            customSound.setLooping(false);
+                        Log.d(TAG,"customSoundUrl download completed");
 	    	            //customSound.start();
 	    	        }
 	    	    });
@@ -945,7 +955,47 @@ public class Polljoy {
     	    });
 	    }
 	}
-	
+
+    static void downloadCustomTapSound(String soundUrl, final String name) {
+        Log.d(TAG,"customTapSoundUrl download started");
+        if (_app.customTapSoundUrl != null && !_app.customTapSoundUrl.equals("null") && _app.customTapSoundUrl.length() > 0) {
+            MediaPlayer mediaPlayer = new MediaPlayer();
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            try {
+                mediaPlayer.setDataSource(_app.customTapSoundUrl);
+            } catch (IllegalArgumentException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (SecurityException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IllegalStateException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnPreparedListener(new OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    customTapSound = mp;
+                    customTapSound.setLooping(false);
+                    Log.d(TAG,"customTapSoundUrl download completed");
+                    //customTapSound.start();
+                }
+            });
+            mediaPlayer.setOnErrorListener(new OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mp, int what, int extra) {
+                    return false;
+                }
+            });
+        }
+    }
+
 	public static void showPoll() {
 		if (_currentShowingPollToken != Integer.MIN_VALUE) {
 			return;

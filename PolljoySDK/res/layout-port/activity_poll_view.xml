@@ -4,6 +4,7 @@
     android:id="@+id/pollViewLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:soundEffectsEnabled="false"
     android:background="@color/pj_transparent" >
 
     <View
