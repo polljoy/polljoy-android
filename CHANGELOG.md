@@ -1,5 +1,9 @@
 ## Version History
 
+### Version 3.0
+ - support REST API 3.0
+ - performance improvement
+
 ### Version 2.2.2
  - support custom Tap sound
  - fine tune default close button size and default reward icon to have better UI

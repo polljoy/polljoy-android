@@ -14,6 +14,13 @@ public class PJPollImageUrlSet implements Serializable {
 	String borderImageP = null;
 	String buttonImageL = null;
 	String buttonImageP = null;
+    String rewardImageUrlSource = "DISK";
+    String closeButtonImageUrlSource = "DISK";
+    String pollImageUrlSource = "DISK";
+    String borderImageLSource = "DISK";
+    String borderImagePSource = "DISK";
+    String buttonImageLSource = "DISK";
+    String buttonImagePSource = "DISK";
 
 	int pollImageCornerRadius = 0;
 
@@ -96,5 +103,36 @@ public class PJPollImageUrlSet implements Serializable {
 	public void setPollImageCornerRadius(int pollImageCornerRadius) {
 		this.pollImageCornerRadius = pollImageCornerRadius;
 	}
-	
+
+    public String getBorderImageLSource() {
+        return borderImageLSource;
+    }
+
+    public void setBorderImageLSource(String borderImageLSource) {
+        this.borderImageLSource = borderImageLSource;
+    }
+
+    public String getBorderImagePSource() {
+        return borderImagePSource;
+    }
+
+    public void setBorderImagePSource(String borderImagePSource) {
+        this.borderImagePSource = borderImagePSource;
+    }
+
+    public String getButtonImageLSource() {
+        return buttonImageLSource;
+    }
+
+    public void setButtonImageLSource(String buttonImageLSource) {
+        this.buttonImageLSource = buttonImageLSource;
+    }
+
+    public String getButtonImagePSource() {
+        return buttonImagePSource;
+    }
+
+    public void setButtonImagePSource(String buttonImagePSource) {
+        this.buttonImagePSource = buttonImagePSource;
+    }
 }

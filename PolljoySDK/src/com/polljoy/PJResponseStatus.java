@@ -3,6 +3,7 @@ package com.polljoy;
 public enum PJResponseStatus {
 	PJSuccess(0),
     PJSessionRegistrationFail(1),
+    PJSessionMauLimitReached(2),
     PJNoPollFound(100),
     PNSessionQuotaReached(102),
     PJDailyQuotaReached(103),

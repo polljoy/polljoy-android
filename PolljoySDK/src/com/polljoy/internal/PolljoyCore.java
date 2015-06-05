@@ -6,14 +6,16 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
+import java.io.FileOutputStream;
+import java.security.MessageDigest;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.graphics.Bitmap;
 
-import com.polljoy.Polljoy;
 import com.polljoy.R;
 
 public class PolljoyCore {
@@ -102,20 +104,48 @@ public class PolljoyCore {
 		}
 	}
 	
-	public static String createFilenameFromUrl(Context context, String url) 
+	public static String createFilenameFromUrl(Context context, String url, String ext)
 	{
-		String[] fileComponent = url.split("?");
-		String filename = fileComponent[0].substring(fileComponent[0].lastIndexOf('/') + 1);
-		String timestamp = (fileComponent.length > 1) ?  fileComponent [1] : "0000" ;
-		String cacheDirectory = context.getCacheDir() + File.pathSeparator + Polljoy.PJ_SDK_NAME;
+		String cacheDirectory = context.getCacheDir() + File.separator + "polljoy";
 		File dir = new File(cacheDirectory);
-		
-		if (!dir.exists()) {
+        String filename = null;
+        try {
+            filename = sha1(url);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (!dir.exists()) {
 			if (!dir.mkdir()){
-				Log.d("polljoy", "cannot create cache folder: " + cacheDirectory);
+				Log.e("polljoy", "cannot create cache folder: " + cacheDirectory);
 			}
 		}
 
-		return cacheDirectory + File.pathSeparator + timestamp + "-" + filename;
+        return cacheDirectory + File.separator + filename + "." + ext;
 	}
+
+    public static String saveImageCache(Bitmap bitmapImage, String filename){
+        FileOutputStream fos = null;
+        try {
+
+            fos = new FileOutputStream(filename);
+            bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return filename;
+    }
+
+    public static String sha1(String s) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("SHA1");
+        md.update(s.getBytes());
+        byte[] bytes = md.digest();
+        StringBuffer buffer = new StringBuffer();
+        for (int i = 0; i < bytes.length; i++) {
+            String tmp = Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1);
+            buffer.append(tmp);
+        }
+        return buffer.toString();
+    }
 }

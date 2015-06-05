@@ -1,5 +1,6 @@
 package com.polljoy;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -20,12 +21,12 @@ import android.os.Build;
 import android.os.Handler;
 import android.view.Display;
 import android.view.WindowManager;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnPreparedListener;
 
 import com.polljoy.PJAsyncTask.PJAsyncTaskListener;
+import com.polljoy.PJFileDownloadAsyncTask.PJFileDownloadAsyncTaskListener;
 import com.polljoy.PJPollViewActivity.PJPollViewActivityDelegate;
 import com.polljoy.internal.Log;
 import com.polljoy.internal.PolljoyCore;
@@ -54,9 +55,9 @@ public class Polljoy {
 	};
 
 	public final static String PJ_SDK_NAME = "Polljoy";
-	public final static String PJ_API_SANDBOX_endpoint = "https://apisandbox.polljoy.com/2.2/poll/";
-	public final static String PJ_API_endpoint = "https://api.polljoy.com/2.2/poll/";
-	static String _SDKVersion = "2.2.2";
+	public final static String PJ_API_SANDBOX_endpoint = "https://apisandbox.polljoy.com/3.0/poll/";
+	public final static String PJ_API_endpoint = "https://api.polljoy.com/3.0/poll/";
+	static String _SDKVersion = "3.0";
 	static boolean _isRegisteringSession = false;
 	static boolean _needsAutoShow = false;
 
@@ -70,6 +71,8 @@ public class Polljoy {
 	static String _deviceModel;
 	static String _devicePlatform;
 	static String _deviceOS;
+    static boolean _activeMau;
+    static boolean _mauLimitReached = false;
 
 	static PJApp _app;
 	static PJPoll _currentPoll;
@@ -89,6 +92,8 @@ public class Polljoy {
     static MediaPlayer customTapSound = null;
 	static double _messageShowDuration = 1.5;
 	static PJRewardThankyouMessageStyle _rewardThankyouMessageStyle = PJRewardThankyouMessageStyle.PJRewardThankyouMessageStyleMessage ;
+    static int _getPollRetryCount = 0;
+    static int _maxGetPollRetryCount = 20;
 
 	// Android only
 	static PJScreenType _screenType;
@@ -96,6 +101,8 @@ public class Polljoy {
 	static PJStartSessionAsyncTask _startSessionTask = null;
 	static PJGetPollAsyncTask _getPollTask = null;
 	static PJResponsePollAsyncTask _responsePollAsyncTask = null;
+	static PJFileDownloadAsyncTask _customSoundDownloadAsyncTask = null;
+	static PJFileDownloadAsyncTask _customTapSoundDownloadAsyncTask = null;
 	static int _currentShowingPollToken = Integer.MIN_VALUE;
 	static ArrayList<Target> imageCacheTargets = new ArrayList<Target>();
 	public final static int BORDER_IMAGE_MAX_LENGTH = 800;
@@ -281,6 +288,13 @@ public class Polljoy {
 			task.execute();
 	}
 
+    private static void executeDownloadTask(PJFileDownloadAsyncTask task) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        else
+            task.execute();
+    }
+
 	public static String getAPIEndpoint() {
 		return _isSandboxMode ? PJ_API_SANDBOX_endpoint : PJ_API_endpoint;
 	}
@@ -332,14 +346,11 @@ public class Polljoy {
 					int status;
 					status = jsonObject.getInt("status");
 					if (status == PJResponseStatus.PJSuccess.statusCode()) {
-						JSONObject appJson = jsonObject.getJSONObject("app");
-						PJApp app = new PJApp(appJson);
-						_app = app;
-						_sessionId = appJson.optString("sessionId");
-						_userId = appJson.optString("userId");
-						downloadCustomSound();
-                        downloadCustomTapSound();
-						downloadAppImages();
+                        JSONObject sessionJson = jsonObject.getJSONObject("session");
+						_sessionId = sessionJson.optString("sessionId");
+                        _mauLimitReached = jsonObject.optBoolean("mauLimitReached");
+                        _activeMau = sessionJson.optBoolean("activeMau");
+						_userId = sessionJson.optString("userId");
 						Log.i(TAG, "startSession " + "_sessionId: "
 								+ _sessionId);
 						Log.i(TAG, "startSession " + "_deviceId: " + _deviceId);
@@ -353,9 +364,6 @@ public class Polljoy {
 										+ String.valueOf(_session));
 						Log.i(TAG, "startSession " + "_timeSinceInstall: "
 								+ String.valueOf(_timeSinceInstall));
-						Log.i(TAG, "startSession " + "App: " + _app.appName);
-						Log.i(TAG, "startSession " + "customSoundUrl: " + _app.customSoundUrl);
-                        Log.i(TAG, "startSession " + "customTapSoundUrl: " + _app.customTapSoundUrl);
 					} else {
 						Log.e(TAG, Polljoy.PJ_SDK_NAME + ": Error - Status: "
 								+ String.valueOf(status));
@@ -406,6 +414,7 @@ public class Polljoy {
 		Log.i(TAG, "schedulePollRequest");
 		getPoll(_appVersion, _level, _session, _timeSinceInstall, _userType,
 				_tags, _delegate);
+        _getPollRetryCount++;
 	}
 
 	public static void getPoll(String appVersion, int level, int session,
@@ -423,37 +432,62 @@ public class Polljoy {
 			_userType = userType;
 			_delegate = delegate;
 			_tags = tags;
-			// check if _isRegitseringSession. if yes, delay the request by 1
+			// check if _isRegitseringSession. if yes, delay the request by 2
 			// sec
 			if (_startSessionTask != null) {
 				Log.i(TAG,
-						"_isRegisteringSession, delay poll request for 1 sec");
+						"_isRegisteringSession, delay poll request for 2 sec");
 				if (schedulePollRequestHandler != null) {
 					schedulePollRequestHandler.removeCallbacksAndMessages(null);
 				}
-				schedulePollRequestHandler = new Handler();
-				schedulePollRequestHandler.postDelayed(new Runnable() {
-					@Override
-					public void run() {
-						schedulePollRequest();
-					}
-				}, 1 * 1000);
-			} else if (_appId != null) {
+                if (_getPollRetryCount < _maxGetPollRetryCount) {
+                    schedulePollRequestHandler = new Handler();
+                    schedulePollRequestHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            schedulePollRequest();
+                        }
+                    }, 2 * 1000);
+                }
+                else {
+                    Log.e(TAG, PJ_SDK_NAME + ": Error - Giving up. Retry " + _getPollRetryCount + "times but still cannot getPoll");
+                    _getPollRetryCount = 0;
+                    if (delegate != null) {
+                        delegate.PJPollNotAvailable(PJResponseStatus.PJNoPollFound);
+                    }
+                }
+			} else if (_appId != null && !_mauLimitReached) {
 				Log.i(TAG,
-						"user already set appId. startSession onbehalf. delay poll request for 2 sec");
+						"user already set appId. startSession on behalf. delay poll request for 2 sec");
 				startSession(_appContext, _appId, _deviceId, false);
 				if (schedulePollRequestHandler != null) {
 					schedulePollRequestHandler.removeCallbacksAndMessages(null);
 				}
-				schedulePollRequestHandler = new Handler();
-				schedulePollRequestHandler.postDelayed(new Runnable() {
-					@Override
-					public void run() {
-						schedulePollRequest();
-					}
-				}, 2 * 1000);
-			} else {
+                if (_getPollRetryCount < _maxGetPollRetryCount) {
+                    schedulePollRequestHandler = new Handler();
+                    schedulePollRequestHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            schedulePollRequest();
+                        }
+                    }, 2 * 1000);
+                }
+                else {
+                    Log.e(TAG, PJ_SDK_NAME + ": Error - Giving up. Retry " + _getPollRetryCount + " times but still cannot getPoll");
+                    _getPollRetryCount = 0;
+                    if (delegate != null) {
+                        delegate.PJPollNotAvailable(PJResponseStatus.PJNoPollFound);
+                    }
+                }
+			} else if (_mauLimitReached) {
+                Log.e(TAG, PJ_SDK_NAME + "MAU Limit Reached");
+                _getPollRetryCount = 0;
+                if (delegate != null) {
+                    delegate.PJPollNotAvailable(PJResponseStatus.PJNoPollFound);
+                }
+            } else {
 				Log.e(TAG, PJ_SDK_NAME + ": Error - Session Not Registered");
+                _getPollRetryCount = 0;
 				if (delegate != null) {
 					delegate.PJPollNotAvailable(PJResponseStatus.PJNoPollFound);
 				}
@@ -486,26 +520,31 @@ public class Polljoy {
 					status = jsonObject.getInt("status");
 					String message = jsonObject.optString("message");
 					if (status == PJResponseStatus.PJSuccess.statusCode()) {
-						JSONArray pollsJsonArray = jsonObject
-								.getJSONArray("polls");
-						int count = 0;
+						JSONArray pollsJsonArray = jsonObject.getJSONArray("polls");
+
+                        // parse app object
+                        JSONObject appJson = jsonObject.getJSONObject("app");
+                        PJApp app = new PJApp(appJson);
+                        _app = app;
+                        downloadCustomSound();
+                        downloadCustomTapSound();
+                        //downloadAppImages();
+
+                        int count = 0;
 						for (int i = 0; i < pollsJsonArray.length(); i++) {
 							try {
+
 								JSONObject pollRequest = (JSONObject) pollsJsonArray
 										.get(i);
 								JSONObject pollJsonObject = pollRequest
 										.optJSONObject("PollRequest");
-								PJPoll poll = new PJPoll(pollJsonObject);
+								PJPoll poll = new PJPoll(pollJsonObject,_app);
 								PJPoll matchedPoll = getPollWithToken(poll.pollToken);
 								if (matchedPoll != null) {
 									_polls.remove(matchedPoll);
 								}
 								_polls.add(poll);
-								if (count == 0) {
-									_app = poll.app;
-								} else {
-									poll.app = _app;
-								}
+
 								count++;
 							} catch (NullPointerException e) {
 								e.printStackTrace();
@@ -689,11 +728,11 @@ public class Polljoy {
 	}
 
 	static void downloadCustomSound() {
-		downloadCustomSound(_app.customSoundUrl, "customSound.wav");
+		downloadCustomSound(_app.customSoundUrl, "customSound");
 	}
 
     static void downloadCustomTapSound() {
-        downloadCustomTapSound(_app.customTapSoundUrl, "customTapSound.wav");
+        downloadCustomSound(_app.customTapSoundUrl, "customTapSound");
     }
 	synchronized static void addCacheTarget(Target target) {
 		imageCacheTargets.add(target);
@@ -707,7 +746,7 @@ public class Polljoy {
 		downloadAppImage(imageUrl, name, 0);
 	}
 
-	static void downloadAppImage(String imageUrl, final String name,
+	static void downloadAppImage(final String imageUrl, final String name,
 			int maxLength) {
 		if (isUrlValid(imageUrl)) {
 			Target target = new Target() {
@@ -721,6 +760,13 @@ public class Polljoy {
 				public void onBitmapLoaded(Bitmap arg0, LoadedFrom arg1) {
 					Log.i(TAG, "downloadAppImage: download " + name
 							+ " completed");
+
+                    String cacheFilename = PolljoyCore.createFilenameFromUrl(_appContext, imageUrl, "png");
+                    File cacheFile = new File(cacheFilename);
+                    if (!cacheFile.exists()) {
+                        PolljoyCore.saveImageCache(arg0,cacheFilename);
+                    }
+
 					removeCacheTarget(this);
 				}
 
@@ -729,7 +775,22 @@ public class Polljoy {
 				}
 			};
 			addCacheTarget(target);
-			RequestCreator request = Picasso.with(_appContext).load(imageUrl);
+
+            String cacheFilename = PolljoyCore.createFilenameFromUrl(_appContext, imageUrl, "png");
+            File cacheFile = new File(cacheFilename);
+            RequestCreator request = null;
+            Log.d(TAG, name + ": cacheFilename " + cacheFilename);
+            if (cacheFile.exists()) {
+                Log.d(TAG, "load from cache:  " + name
+                        + " " + imageUrl);
+                request = Picasso.with(_appContext).load(cacheFile);
+            }
+            else {
+                Log.d(TAG, "load from network:  " + name
+                        + " " + imageUrl);
+                request = Picasso.with(_appContext).load(imageUrl);
+            }
+
 			if (maxLength > 0) {
 				request.resize(maxLength, maxLength).centerInside();
 			}
@@ -746,7 +807,8 @@ public class Polljoy {
 		downloadPollImage("pollImage", poll.pollImageUrl, poll.appImageUrl,
 				new PollImageDownloadingCompletionHandler() {
 					@Override
-					public void imageDownloadedForUrl(String downloadedUrl) {
+					public void imageDownloadedForUrl(String downloadedUrl, String source) {
+						poll.imageUrlSetForDisplay.pollImageUrlSource = source;
 						poll.imageUrlSetForDisplay.pollImageUrl = downloadedUrl;
 						boolean isUsingFallbackUrl = !(downloadedUrl != null && downloadedUrl
 								.equals(poll.pollImageUrl));
@@ -766,7 +828,8 @@ public class Polljoy {
 				poll.app.rewardImageUrl,
 				new PollImageDownloadingCompletionHandler() {
 					@Override
-					public void imageDownloadedForUrl(String downloadedUrl) {
+					public void imageDownloadedForUrl(String downloadedUrl, String source) {
+						poll.imageUrlSetForDisplay.rewardImageUrlSource = source;
 						poll.imageUrlSetForDisplay.rewardImageUrl = downloadedUrl;
 						poll.imageStatus |= PJPollImageStatus.PJPollRewardImageReady
 								.getStatusCode();
@@ -776,7 +839,8 @@ public class Polljoy {
 		downloadPollImage("closeButtonImageUrl", poll.app.closeButtonImageUrl,
 				null, new PollImageDownloadingCompletionHandler() {
 					@Override
-					public void imageDownloadedForUrl(String downloadedUrl) {
+					public void imageDownloadedForUrl(String downloadedUrl, String source) {
+						poll.imageUrlSetForDisplay.closeButtonImageUrlSource = source;
 						poll.imageUrlSetForDisplay.closeButtonImageUrl = downloadedUrl;
 						poll.imageStatus |= PJPollImageStatus.PJPollCloseButtonImageReady
 								.getStatusCode();
@@ -789,7 +853,8 @@ public class Polljoy {
 				BORDER_IMAGE_MAX_LENGTH,
 				new PollImageDownloadingCompletionHandler() {
 					@Override
-					public void imageDownloadedForUrl(String downloadedUrl) {
+					public void imageDownloadedForUrl(String downloadedUrl, String source) {
+                        poll.imageUrlSetForDisplay.borderImageLSource = source;
 						poll.imageUrlSetForDisplay.borderImageL = downloadedUrl;
 						poll.imageStatus |= PJPollImageStatus.PJPollBorderLImageReady
 								.getStatusCode();
@@ -800,7 +865,8 @@ public class Polljoy {
 				BORDER_IMAGE_MAX_LENGTH,
 				new PollImageDownloadingCompletionHandler() {
 					@Override
-					public void imageDownloadedForUrl(String downloadedUrl) {
+					public void imageDownloadedForUrl(String downloadedUrl, String source) {
+                        poll.imageUrlSetForDisplay.borderImagePSource = source;
 						poll.imageUrlSetForDisplay.borderImageP = downloadedUrl;
 						poll.imageStatus |= PJPollImageStatus.PJPollBorderPImageReady
 								.getStatusCode();
@@ -810,7 +876,8 @@ public class Polljoy {
 		downloadPollImage("buttonImageL", imageUrlSet.buttonImageL, null,
 				new PollImageDownloadingCompletionHandler() {
 					@Override
-					public void imageDownloadedForUrl(String downloadedUrl) {
+					public void imageDownloadedForUrl(String downloadedUrl, String source) {
+						poll.imageUrlSetForDisplay.buttonImageLSource = source;
 						poll.imageUrlSetForDisplay.buttonImageL = downloadedUrl;
 						poll.imageStatus |= PJPollImageStatus.PJPollButtonLImageReady
 								.getStatusCode();
@@ -820,7 +887,8 @@ public class Polljoy {
 		downloadPollImage("buttonImageP", imageUrlSet.buttonImageP, null,
 				new PollImageDownloadingCompletionHandler() {
 					@Override
-					public void imageDownloadedForUrl(String downloadedUrl) {
+					public void imageDownloadedForUrl(String downloadedUrl, String source) {
+						poll.imageUrlSetForDisplay.buttonImagePSource = source;
 						poll.imageUrlSetForDisplay.buttonImageP = downloadedUrl;
 						poll.imageStatus |= PJPollImageStatus.PJPollButtonPImageReady
 								.getStatusCode();
@@ -832,20 +900,22 @@ public class Polljoy {
             for (String imagePollChoice: poll.choices) {
                 String imagePollUrl = poll.choiceImageUrl.get(imagePollChoice);
                 Log.i(TAG, "image poll url is: " + imagePollUrl);
-              downloadPollImage("imagePollImages", imagePollUrl, null,
+                downloadPollImage("imagePollImages", imagePollUrl, null,
                         new PollImageDownloadingCompletionHandler() {
                             @Override
-                            public void imageDownloadedForUrl(String downloadedUrl) {
+                            public void imageDownloadedForUrl(String downloadedUrl, String source) {
                                 poll.imagePollStatus++;
+                                Log.i(TAG, "image poll url is: " + downloadedUrl + "/ source: " + source);
+                                poll.choiceImageUrlSource.put(downloadedUrl, source);
                                 checkPollImagesStatus(poll);
                             }
                         });
-              }
+                }
         }
 	}
 
 	public interface PollImageDownloadingCompletionHandler {
-		void imageDownloadedForUrl(String downloadedUrl);
+		void imageDownloadedForUrl(String downloadedUrl, String source);
 	}
 
 	static void downloadPollImage(final String name, final String imageUrl,
@@ -865,16 +935,43 @@ public class Polljoy {
 					public void onBitmapFailed(Drawable arg0) {
 						Log.i(TAG, "downloadPollImage: download " + name
 								+ " failed");
-						completionHandler.imageDownloadedForUrl(null);
+						completionHandler.imageDownloadedForUrl(null, "DISK");
 						removeCacheTarget(this);
 					}
 
 					@Override
 					public void onBitmapLoaded(Bitmap arg0, LoadedFrom arg1) {
 						Log.i(TAG, "downloadPollImage: download " + name
-								+ " completed");
-						completionHandler.imageDownloadedForUrl(urlToDownload);
-						removeCacheTarget(this);
+								+ " completed. From: " + arg1.toString());
+
+                        if (arg1.toString().equals("NETWORK")) {
+                            String cacheFilename = PolljoyCore.createFilenameFromUrl(_appContext, urlToDownload, "png");
+                            File cacheFile = new File(cacheFilename);
+
+                            Log.d(TAG, "downloadPollImage: saving cache file: " + cacheFilename
+                                    + " url: " + urlToDownload);
+
+                            // try to reload from disk cache, tweet for Picasso bug in loading large disk file
+                            Picasso.with(_appContext).load(cacheFile).into(new Target() {
+                                @Override
+                                public void onBitmapFailed(Drawable arg0) {
+                                }
+
+                                @Override
+                                public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
+                                }
+
+                                @Override
+                                public void onPrepareLoad(Drawable arg0) {
+                                }
+                            });
+
+                            PolljoyCore.saveImageCache(arg0,cacheFilename);
+                        }
+
+                        completionHandler.imageDownloadedForUrl(urlToDownload, arg1.toString());
+                        removeCacheTarget(this);
+
 					}
 
 					@Override
@@ -882,19 +979,34 @@ public class Polljoy {
 					}
 				};
 				addCacheTarget(target);
-				RequestCreator request = Picasso.with(_appContext).load(
-						urlToDownload);
+
+                String cacheFilename = PolljoyCore.createFilenameFromUrl(_appContext, urlToDownload, "png");
+                File cacheFile = new File(cacheFilename);
+                RequestCreator request = null;
+                Log.d(TAG, name + ": cacheFilename " + cacheFilename);
+
+                if (cacheFile.exists()) {
+                    Log.d(TAG, "load from cache:  " + name
+                            + " " + urlToDownload);
+                    request = Picasso.with(_appContext).load(cacheFile);
+                }
+                else {
+                    Log.d(TAG, "load from network:  " + name
+                            + " " + urlToDownload);
+                    request = Picasso.with(_appContext).load(urlToDownload);
+                }
+
 				if (maxLength > 0) {
 					request.resize(maxLength, maxLength).centerInside();
 				}
 				request.into(target);
 			} else {
-				completionHandler.imageDownloadedForUrl(null);
+				completionHandler.imageDownloadedForUrl(null, "DISK");
 			}
 		} catch (NullPointerException e) {
 			e.printStackTrace();
 			if (completionHandler != null) {
-				completionHandler.imageDownloadedForUrl(null);
+				completionHandler.imageDownloadedForUrl(null, "DISK");
 			}
 		}
 	}
@@ -916,84 +1028,111 @@ public class Polljoy {
 		}
 	}
 
-	static void downloadCustomSound(String soundUrl, final String name) {
-        Log.d(TAG,"customSoundUrl download started");
-		if (_app.customSoundUrl != null && !_app.customSoundUrl.equals("null") && _app.customSoundUrl.length() > 0) {		
-			MediaPlayer mediaPlayer = new MediaPlayer();
-	    	mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-	    	try {
-				mediaPlayer.setDataSource(_app.customSoundUrl);
-			} catch (IllegalArgumentException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (SecurityException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalStateException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-	    	mediaPlayer.prepareAsync();
-	    	mediaPlayer.setOnPreparedListener(new OnPreparedListener() {
-	    	        @Override
-	    	        public void onPrepared(MediaPlayer mp) {
-	    	            customSound = mp;
-	    	            customSound.setLooping(false);
-                        Log.d(TAG,"customSoundUrl download completed");
-	    	            //customSound.start();
-	    	        }
-	    	    });
-    	    mediaPlayer.setOnErrorListener(new OnErrorListener() {
-    	        @Override
-    	        public boolean onError(MediaPlayer mp, int what, int extra) {
-    	            return false;
-    	        }
-    	    });
+	static void downloadCustomSound(final String soundUrl, final String type) {
+        Log.d(TAG, type + " download started");
+		if (isUrlValid(soundUrl)) {
+
+            String cacheFilename = PolljoyCore.createFilenameFromUrl(_appContext, soundUrl, "mp3");
+            File cacheFile = new File(cacheFilename);
+            Log.d(TAG, type + ": cacheFilename " + cacheFilename);
+
+            if (cacheFile.exists()) {
+                Log.d(TAG, " load from cache:  " + type
+                        + " " + soundUrl);
+                prepareCustomSound(cacheFilename, type);
+            }
+            else {
+                Log.d(TAG, " load from network:  " + type
+                        + " " + soundUrl);
+
+                final PJFileDownloadAsyncTask fileDownloadAsyncTask;
+
+                if (type.equals("customSound")) {
+                    _customSoundDownloadAsyncTask = new PJFileDownloadAsyncTask(soundUrl, cacheFilename);
+                    fileDownloadAsyncTask = _customSoundDownloadAsyncTask;
+                }
+                else {
+                    _customTapSoundDownloadAsyncTask = new PJFileDownloadAsyncTask(soundUrl, cacheFilename);
+                    fileDownloadAsyncTask = _customTapSoundDownloadAsyncTask;
+                }
+
+                fileDownloadAsyncTask.taskListener = new PJFileDownloadAsyncTaskListener() {
+
+                    @Override
+                    public void taskCompletedCallback(String filename) {
+                        Log.d(TAG, type + " download completed. url: " + soundUrl + " cache filename : " + filename);
+                        try {
+                            prepareCustomSound(filename, type);
+                        } catch (NullPointerException e) {
+                            e.printStackTrace();
+                        }
+                        if (type.equals("customSound")) {
+                            _customSoundDownloadAsyncTask = null;
+                        }
+                        else {
+                            _customTapSoundDownloadAsyncTask = null;
+                        }
+                    }
+
+                    @Override
+                    public void taskFailedCallback(Exception e) {
+                        Log.e(TAG, Polljoy.PJ_SDK_NAME + ": " + type + " download Error: "
+                                        + e.getMessage() + " " + _appId);
+                        if (type.equals("customSound")) {
+                            _customSoundDownloadAsyncTask = null;
+                        }
+                        else {
+                            _customTapSoundDownloadAsyncTask = null;
+                        }
+                    }
+                };
+                executeDownloadTask(fileDownloadAsyncTask);
+            }
 	    }
 	}
 
-    static void downloadCustomTapSound(String soundUrl, final String name) {
-        Log.d(TAG,"customTapSoundUrl download started");
-        if (_app.customTapSoundUrl != null && !_app.customTapSoundUrl.equals("null") && _app.customTapSoundUrl.length() > 0) {
-            MediaPlayer mediaPlayer = new MediaPlayer();
-            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            try {
-                mediaPlayer.setDataSource(_app.customTapSoundUrl);
-            } catch (IllegalArgumentException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (SecurityException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IllegalStateException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+    static void prepareCustomSound(String dataSource, final String type) {
+        Log.d(TAG, "prepareCustomSound type: " + type + " source: " + dataSource);
+        MediaPlayer mediaPlayer = new MediaPlayer();
+        try {
+            mediaPlayer.setDataSource(dataSource);
+        } catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalStateException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
-            mediaPlayer.prepareAsync();
-            mediaPlayer.setOnPreparedListener(new OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
+        mediaPlayer.prepareAsync();
+        mediaPlayer.setOnPreparedListener(new OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                if (type.equals("customSound")) {
+                    customSound = mp;
+                    customSound.setLooping(false);
+                }
+                else if (type.equals("customTapSound")) {
                     customTapSound = mp;
                     customTapSound.setLooping(false);
-                    Log.d(TAG,"customTapSoundUrl download completed");
-                    //customTapSound.start();
                 }
-            });
-            mediaPlayer.setOnErrorListener(new OnErrorListener() {
-                @Override
-                public boolean onError(MediaPlayer mp, int what, int extra) {
-                    return false;
-                }
-            });
-        }
+
+                Log.d(TAG, type + " is ready");
+                //customSound.start();
+            }
+        });
+        mediaPlayer.setOnErrorListener(new OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mp, int what, int extra) {
+                return false;
+            }
+        });
     }
 
 	public static void showPoll() {

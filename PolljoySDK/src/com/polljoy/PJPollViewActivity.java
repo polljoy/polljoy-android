@@ -43,10 +43,13 @@ import android.widget.TextView;
 import com.polljoy.internal.AutofitTextView;
 import com.polljoy.internal.ImageTextButton;
 import com.polljoy.internal.Log;
+import com.polljoy.internal.PolljoyCore;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Picasso.LoadedFrom;
 import com.squareup.picasso.RequestCreator;
 import com.squareup.picasso.Target;
+
+import java.io.File;
 
 public class PJPollViewActivity extends Activity {
 	public interface PJPollViewActivityDelegate {
@@ -531,7 +534,7 @@ public class PJPollViewActivity extends Activity {
 
 	void configurePortraitLayout(PJScreenConfiguration screenConfig) {
 
-		this.setBorderImageWithUrl(myPoll.imageUrlSetForDisplay.borderImageP);
+		this.setBorderImageWithUrl(myPoll.imageUrlSetForDisplay.borderImageP, myPoll.imageUrlSetForDisplay.borderImagePSource);
 
 		int shadowOffset = screenConfig.heightWithPercentage(1.06);
 
@@ -623,7 +626,7 @@ public class PJPollViewActivity extends Activity {
 			this.adjustLayoutMargins(button.imageView, 2 * shadowOffset,
 					2 * shadowOffset, 0, 0);
 			this.setButtonStyle(button,
-					myPoll.imageUrlSetForDisplay.buttonImageP, screenConfig);
+					myPoll.imageUrlSetForDisplay.buttonImageP, screenConfig, myPoll.imageUrlSetForDisplay.buttonImagePSource);
 		}
 
 		// open answer edit text
@@ -643,7 +646,7 @@ public class PJPollViewActivity extends Activity {
 	}
 
 	void configureLandscapeLayout(PJScreenConfiguration screenConfig) {
-		this.setBorderImageWithUrl(myPoll.imageUrlSetForDisplay.borderImageL);
+		this.setBorderImageWithUrl(myPoll.imageUrlSetForDisplay.borderImageL, myPoll.imageUrlSetForDisplay.borderImageLSource);
 
 		int shadowOffset = screenConfig.heightWithPercentage(1.667);
 
@@ -758,7 +761,7 @@ public class PJPollViewActivity extends Activity {
 			button.button
 					.setPadding(horizontalPadding, 0, horizontalPadding, 0);
 			this.setButtonStyle(button,
-					myPoll.imageUrlSetForDisplay.buttonImageL, screenConfig);
+					myPoll.imageUrlSetForDisplay.buttonImageL, screenConfig, myPoll.imageUrlSetForDisplay.buttonImageLSource);
 		}
 
 		// open answer edit text
@@ -778,8 +781,16 @@ public class PJPollViewActivity extends Activity {
 
 	}
 
-	void setBorderImageWithUrl(String borderImageUrl) {
-		RequestCreator request = Picasso.with(this).load(borderImageUrl);
+	void setBorderImageWithUrl(String borderImageUrl, String source) {
+        RequestCreator request;
+        if (source.equals("NETWORK")) {
+            request = Picasso.with(this).load(borderImageUrl);
+        }
+        else {
+            final String cacheFilename = PolljoyCore.createFilenameFromUrl(this, borderImageUrl, "png");
+            File cacheFile = new File(cacheFilename);
+            request = Picasso.with(this).load(cacheFile);
+        }
 		int lengthLimit = Polljoy.BORDER_IMAGE_MAX_LENGTH;
 		if (lengthLimit > 0) {
 			request = request.resize(lengthLimit, lengthLimit).centerInside();
@@ -806,7 +817,7 @@ public class PJPollViewActivity extends Activity {
 	}
 
 	void setButtonStyle(final ImageTextButton button, String buttonImageUrl,
-			PJScreenConfiguration screenConfig) {
+			PJScreenConfiguration screenConfig, String source) {
 		button.setBackgroundColor(Color.TRANSPARENT);
 		button.setTextColor(myPoll.app.getButtonFontColor());
 		button.setTextSize(TypedValue.COMPLEX_UNIT_PX, screenConfig.fontSize);
@@ -827,31 +838,53 @@ public class PJPollViewActivity extends Activity {
 		} else {
 			button.imageView.setImageDrawable(null);
 		}
-		Picasso.with(this).load(buttonImageUrl).into(new Target() {
-			@Override
-			public void onBitmapFailed(Drawable arg0) {
-			}
+        String cacheFilename = PolljoyCore.createFilenameFromUrl(this, buttonImageUrl, "png");
+        File cacheFile = new File(cacheFilename);
+        RequestCreator request;
 
-			@Override
-			public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
-				setDrawableForView(button.button, null);
-				button.imageView.setImageBitmap(bitmap);
-				MarginLayoutParams parameters = (MarginLayoutParams) button.button
-						.getLayoutParams();
-				button.imageView.setLayoutParams(parameters);
-			}
+        if (source.equals("NETWORK")) {
+            request = Picasso.with(this).load(buttonImageUrl);
+        }
+        else {
+            request = Picasso.with(this).load(cacheFile);
+        }
 
-			@Override
-			public void onPrepareLoad(Drawable arg0) {
-			}
-		});
+        request.into(new Target() {
+            @Override
+            public void onBitmapFailed(Drawable arg0) {
+            }
+
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
+                setDrawableForView(button.button, null);
+                button.imageView.setImageBitmap(bitmap);
+                MarginLayoutParams parameters = (MarginLayoutParams) button.button
+                        .getLayoutParams();
+                button.imageView.setLayoutParams(parameters);
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable arg0) {
+            }
+        });
 	}
 
     void setImagePoll() {
         ImageTextButton[] imagePollImages = {this.imagePoll1, this.imagePoll2, this.imagePoll3, this.imagePoll4};
         if (myPoll.choiceImageUrl.size()>0) {
             this.imagePollMain.setText(myPoll.choices[0]);
-            Picasso.with(this).load(myPoll.choiceImageUrl.get(myPoll.choices[0])).into(new Target() {
+            RequestCreator request;
+            String choiceUrl = myPoll.choiceImageUrl.get(myPoll.choices[0]);
+            if (myPoll.choiceImageUrlSource.get(choiceUrl).equals("NETWORK")) {
+                request = Picasso.with(this).load(choiceUrl);
+            }
+            else {
+                String cacheFilename = PolljoyCore.createFilenameFromUrl(this, choiceUrl, "png");
+                File cacheFile = new File(cacheFilename);
+                request =  Picasso.with(this).load(cacheFile);
+            }
+
+            request.into(new Target() {
                 @Override
                 public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
                     imagePollMain.imageView.setImageBitmap(bitmap);
@@ -868,7 +901,17 @@ public class PJPollViewActivity extends Activity {
             int index=0;
             for(final ImageTextButton currentImage: imagePollImages) {
                 if (index<myPoll.choiceImageUrl.size()) {
-                    Picasso.with(this).load(myPoll.choiceImageUrl.get(myPoll.choices[index])).into(new Target() {
+                    RequestCreator request1;
+                    String choiceUrl1 = myPoll.choiceImageUrl.get(myPoll.choices[index]);
+                    if (myPoll.choiceImageUrlSource.get(choiceUrl1).equals("NETWORK")) {
+                        request1 = Picasso.with(this).load(choiceUrl1);
+                    }
+                    else {
+                        String cacheFilename1 = PolljoyCore.createFilenameFromUrl(this, choiceUrl1, "png");
+                        File cacheFile1 = new File(cacheFilename1);
+                        request1 =  Picasso.with(this).load(cacheFile1);
+                    }
+                    request1.into(new Target() {
                         @Override
                         public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
                             currentImage.imageView.setImageBitmap(bitmap);
@@ -882,7 +925,6 @@ public class PJPollViewActivity extends Activity {
                         }
 
                     });
-                    //Picasso.with(this).load(myPoll.choiceImageUrl.get(myPoll.choices[index])).into(imagePollImages[index]);
                     currentImage.setText(myPoll.choices[index]);
                     currentImage.setVisibility(View.VISIBLE);
                     currentImage.setTextSize(0);
@@ -904,8 +946,16 @@ public class PJPollViewActivity extends Activity {
 
 	void setPollImage() {
 		if (myPoll.imageUrlSetForDisplay.pollImageUrl != null) {
-			Picasso.with(this).load(myPoll.imageUrlSetForDisplay.pollImageUrl)
-					.into(this.pollImageView);
+            if (myPoll.imageUrlSetForDisplay.pollImageUrlSource.equals("NETWORK")) {
+                Picasso.with(this).load(myPoll.imageUrlSetForDisplay.pollImageUrl)
+                        .into(this.pollImageView);
+            }
+            else {
+                String cacheFilename = PolljoyCore.createFilenameFromUrl(this, myPoll.imageUrlSetForDisplay.pollImageUrl, "png");
+                File cacheFile = new File(cacheFilename);
+                Picasso.with(this).load(cacheFile)
+                        .into(this.pollImageView);
+            }
 		} else {
 			this.pollImageView.setImageDrawable(null);
 		}
@@ -914,29 +964,46 @@ public class PJPollViewActivity extends Activity {
 	void setRewardImage() {
 		String imageUrl = myPoll.imageUrlSetForDisplay.rewardImageUrl;
 		if (imageUrl != null) {
-			Picasso.with(this).load(imageUrl).into(this.virtualAmountImageView);
-			Picasso.with(this).load(imageUrl).into(this.rewardImageView);
+            if (myPoll.imageUrlSetForDisplay.rewardImageUrlSource.equals("NETWORK")){
+                Picasso.with(this).load(imageUrl).into(this.virtualAmountImageView);
+                Picasso.with(this).load(imageUrl).into(this.rewardImageView);
+            }
+            else {
+                String cacheFilename = PolljoyCore.createFilenameFromUrl(this, imageUrl, "png");
+                File cacheFile = new File(cacheFilename);
+                Picasso.with(this).load(cacheFile).into(this.virtualAmountImageView);
+                Picasso.with(this).load(cacheFile).into(this.rewardImageView);
+            }
 		}
 	}
 
 	void setCloseButtonImage() {
 		String imageUrl = myPoll.imageUrlSetForDisplay.closeButtonImageUrl;
 		if (imageUrl != null) {
-			Picasso.with(this).load(imageUrl).into(new Target() {
-				@Override
-				public void onBitmapFailed(Drawable arg0) {
-				}
+            RequestCreator request;
+            if (myPoll.imageUrlSetForDisplay.closeButtonImageUrlSource.equals("NETWORK")) {
+                request = Picasso.with(this).load(imageUrl);
+            }
+            else {
+                String cacheFilename = PolljoyCore.createFilenameFromUrl(this, imageUrl, "png");
+                File cacheFile = new File(cacheFilename);
+                request = Picasso.with(this).load(cacheFile);
+            }
+            request.into(new Target() {
+                @Override
+                public void onBitmapFailed(Drawable arg0) {
+                }
 
-				@Override
-				public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
-					closeButton.setColorFilter(null);
-					closeButton.setImageBitmap(bitmap);
-				}
+                @Override
+                public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
+                    closeButton.setColorFilter(null);
+                    closeButton.setImageBitmap(bitmap);
+                }
 
-				@Override
-				public void onPrepareLoad(Drawable arg0) {
-				}
-			});
+                @Override
+                public void onPrepareLoad(Drawable arg0) {
+                }
+            });
 		}
 	}
 
@@ -994,7 +1061,18 @@ public class PJPollViewActivity extends Activity {
         } else {
             this.imagePollConfirm.setVisibility(View.INVISIBLE);
         }
-        Picasso.with(this).load( myPoll.choiceImageUrl.get(view.getText().toString()) ).into(new Target() {
+        RequestCreator request;
+        String choiceUrl = myPoll.choiceImageUrl.get(view.getText().toString());
+        if (myPoll.choiceImageUrlSource.get(choiceUrl).equals("NETWORK")) {
+            request = Picasso.with(this).load(choiceUrl);
+        }
+        else {
+            String cacheFilename = PolljoyCore.createFilenameFromUrl(this, choiceUrl, "png");
+            File cacheFile = new File(cacheFilename);
+            request =  Picasso.with(this).load(cacheFile);
+        }
+
+        request.into(new Target() {
             @Override
             public void onBitmapLoaded(Bitmap bitmap, LoadedFrom arg1) {
                 imagePollMain.imageView.setImageBitmap(bitmap);

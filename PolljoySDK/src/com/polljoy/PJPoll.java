@@ -28,6 +28,7 @@ public class PJPoll implements Serializable {
 	String choice;
 	String[] choices;
     Hashtable<String,String> choiceImageUrl = null;
+    Hashtable<String,String> choiceImageUrlSource = null;
 	boolean randomOrder;
 	boolean mandatory;
 	int virtualAmount;
@@ -93,7 +94,7 @@ public class PJPoll implements Serializable {
 	
 	public final static String TAG = "PJPoll";
 	
-	public PJPoll(JSONObject jsonObject) {
+	public PJPoll(JSONObject jsonObject, PJApp parsedApp) {
 		this.appId = jsonObject.optString("appId");
 		this.pollId = jsonObject.optInt("pollId");
 		this.desiredResponses = jsonObject.optInt("desiredResponses");
@@ -146,6 +147,12 @@ public class PJPoll implements Serializable {
 		this.choices = convertJSONArrayToStringArray(choicesJsonArray);
 		JSONObject choiceImageUrlObject = jsonObject.optJSONObject("choiceImageUrl");
         this.choiceImageUrl = this.getChoiceImageUrlMapFromJSONObject(choiceImageUrlObject);
+        if (this.type.equals("I")) {
+            this.choiceImageUrlSource = new Hashtable<String, String>();
+            for (String imagePollChoice: this.choices) {
+                this.choiceImageUrlSource.put(this.choiceImageUrl.get(imagePollChoice),"DISK");
+            }
+        }
 
         JSONArray tagsJsonArray = jsonObject.optJSONArray("tags");
 		this.tags = convertJSONArrayToStringArray(tagsJsonArray);
@@ -174,8 +181,8 @@ public class PJPoll implements Serializable {
 		this.session = jsonObject.optInt("session");
 		this.imageCornerRadius = jsonObject.optInt("imageCornerRadius");
 
-		JSONObject appJsonObject = jsonObject.optJSONObject("app");
-		PJApp parsedApp = new PJApp(appJsonObject);
+		//JSONObject appJsonObject = jsonObject.optJSONObject("app");
+		//PJApp parsedApp = new PJApp(appJsonObject);
 		if (parsedApp.appId != null) {
 			this.app = parsedApp;
 		}
@@ -263,7 +270,7 @@ public class PJPoll implements Serializable {
                     JSONObject pollJsonObject = pollRequest
 							.optJSONObject("PollRequest");
 
-                    PJPoll poll = new PJPoll(pollJsonObject);
+                    PJPoll poll = new PJPoll(pollJsonObject, app);
                     result.put(name, poll);
                 }
             } else {
@@ -633,6 +640,10 @@ public class PJPoll implements Serializable {
     public Hashtable<String, String> getChoiceImageUrl() {return choiceImageUrl;};
 
     public void setChoiceImageUrl(Hashtable<String, String> choiceImageUrl) {this.choiceImageUrl = choiceImageUrl;}
+
+    public Hashtable<String, String> getChoiceImageUrlSource() {return choiceImageUrlSource;};
+
+    public void setChoiceImageUrlSource(Hashtable<String, String> choiceImageUrlSource) {this.choiceImageUrlSource = choiceImageUrlSource;}
 
 	public String getCollectButtonText() {
 		return collectButtonText;
