@@ -57,7 +57,7 @@ public class Polljoy {
 	public final static String PJ_SDK_NAME = "Polljoy";
 	public final static String PJ_API_SANDBOX_endpoint = "https://apisandbox.polljoy.com/3.0/poll/";
 	public final static String PJ_API_endpoint = "https://api.polljoy.com/3.0/poll/";
-	static String _SDKVersion = "3.0";
+	static String _SDKVersion = "3.0.1";
 	static boolean _isRegisteringSession = false;
 	static boolean _needsAutoShow = false;
 

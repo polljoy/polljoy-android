@@ -66,7 +66,7 @@ public class PJPoll implements Serializable {
 	boolean isReadyToShow;
 	@Deprecated
 	String imageUrlToDisplay;
-	String[] tags;
+	String tags;
 
 	int appUsageTime = 0;
 	Hashtable<String, String> choiceUrl = null;
@@ -154,8 +154,7 @@ public class PJPoll implements Serializable {
             }
         }
 
-        JSONArray tagsJsonArray = jsonObject.optJSONArray("tags");
-		this.tags = convertJSONArrayToStringArray(tagsJsonArray);
+		this.tags = jsonObject.optString("tags");
 		this.imageUrlToDisplay = null;
 
 		JSONObject choiceUrlJsonObject = jsonObject.optJSONObject("choiceUrl");
@@ -613,11 +612,11 @@ public class PJPoll implements Serializable {
 		this.isReadyToShow = isReadyToShow;
 	}
 
-	public String[] getTags() {
+	public String getTags() {
 		return tags;
 	}
 
-	public void setTags(String[] tags) {
+	public void setTags(String tags) {
 		this.tags = tags;
 	}
 
